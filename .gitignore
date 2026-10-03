@@ -1,0 +1,14 @@
+# model weights and run outputs never go into git
+models/
+*.safetensors
+*.gguf
+*.work/
+delivery/
+train/data/
+# python / tooling
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+venv/
+.DS_Store

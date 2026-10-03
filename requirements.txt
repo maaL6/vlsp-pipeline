@@ -1,0 +1,11 @@
+# Inference (HF backend). Install torch with the CUDA build matching the GPU first, e.g.
+#   pip install torch --index-url https://download.pytorch.org/whl/cu121
+tokenizers>=0.21
+transformers>=5.6        # HunYuanDenseV1ForCausalLM (Hy-MT2); runs used 5.8.1
+accelerate
+safetensors
+sentencepiece
+# Tests / offline tools
+pytest
+sacrebleu>=2.3           # tools/compare_runs.py only
+# Training helpers (docmt/train, train/): peft

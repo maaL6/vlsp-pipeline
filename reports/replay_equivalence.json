@@ -1,0 +1,216 @@
+{
+  "recorded_run": "/Users/lam/Documents/VLSP26/report_lam_3_10/delivery/hy_a1_structure__kaggleT4__20261003b",
+  "traces": [
+    "/Users/lam/Documents/VLSP26/report_lam_3_10/delivery/hy_a1_structure__kaggleT4__20261003b/logs/generation_trace.jsonl"
+  ],
+  "legacy_code": "/Users/lam/Documents/VLSP26/report_lam_3_10/code",
+  "manifest": "/Users/lam/Documents/VLSP26/task 3-10/CHUNG/inputs/smoke6_doc_direction_manifest.jsonl",
+  "config": {
+    "run_id": "replay_equivalence",
+    "branch": "hy_a1_structure",
+    "owner": "Lam",
+    "backend": "mock",
+    "model": "",
+    "model_sha256": "",
+    "tokenizer_path": "",
+    "tokenizer_sha256": "",
+    "server_url": "http://127.0.0.1:8099",
+    "source_cap": 768,
+    "evidence_cap": 512,
+    "max_sequence": 4096,
+    "margin": 32,
+    "max_nodes": 8,
+    "table_cap": 384,
+    "max_table_nodes": 16,
+    "signature_cap": 128,
+    "recovery_cap": 256,
+    "quality_recovery_rounds": 1,
+    "recent_accepted_units": 2,
+    "soft_terms": 8,
+    "batch_size": 4,
+    "do_sample": false,
+    "repetition_penalty": 1.05,
+    "output_budget": "min(remaining_with_margin, max(256, ceil(2.5*source_tokens)+128))",
+    "prompt_style": "default",
+    "source_context": false,
+    "soft_glossary": false,
+    "target_history": false,
+    "selective_recovery": true,
+    "normalize_source": true,
+    "normalize_reference": false,
+    "reference_available_at_inference": false,
+    "glossary_path": "",
+    "seed": 42,
+    "hf_dtype": "float16",
+    "hf_device": "cuda",
+    "extra": {
+      "resume": false
+    }
+  },
+  "replay": {
+    "legacy": {
+      "hits": 1109,
+      "misses": 2,
+      "miss_request_ids": [
+        "replay_equivalence|en-vi|Vi_pham_hanh_chinh/111:u0334.r4|a1",
+        "replay_equivalence|en-vi|Vi_pham_hanh_chinh/111:u0334.r5|a1"
+      ]
+    },
+    "v1": {
+      "hits": 1109,
+      "misses": 2,
+      "miss_request_ids": [
+        "replay_equivalence|en-vi|Vi_pham_hanh_chinh/111:u0334.r4|a1",
+        "replay_equivalence|en-vi|Vi_pham_hanh_chinh/111:u0334.r5|a1"
+      ]
+    }
+  },
+  "summary": {
+    "legacy": {
+      "en-vi": {
+        "documents": 5,
+        "requests": 1060,
+        "recovery_requests": 570,
+        "statuses": {
+          "completed": 5
+        },
+        "unresolved_units": 0,
+        "op_error_count": 0,
+        "runtime": 5.858
+      },
+      "vi-en": {
+        "documents": 1,
+        "requests": 51,
+        "recovery_requests": 26,
+        "statuses": {
+          "completed": 1
+        },
+        "unresolved_units": 0,
+        "op_error_count": 0,
+        "runtime": 0.781
+      }
+    },
+    "v1": {
+      "en-vi": {
+        "documents": 5,
+        "requests": 1060,
+        "recovery_requests": 570,
+        "statuses": {
+          "completed": 5
+        },
+        "unresolved_units": 0,
+        "op_error_count": 0,
+        "runtime": 5.681
+      },
+      "vi-en": {
+        "documents": 1,
+        "requests": 51,
+        "recovery_requests": 26,
+        "statuses": {
+          "completed": 1
+        },
+        "unresolved_units": 0,
+        "op_error_count": 0,
+        "runtime": 0.751
+      }
+    }
+  },
+  "legacy_vs_v1": {
+    "predictions": {
+      "legacy": 6,
+      "v1": 6,
+      "identical": 6,
+      "different": []
+    },
+    "document_status": {
+      "records": 6,
+      "identical": 6,
+      "different": []
+    },
+    "generation_trace": {
+      "legacy": 1111,
+      "v1": 1111,
+      "different": 0,
+      "examples": []
+    },
+    "prompts": {
+      "legacy": 972,
+      "v1": 972,
+      "only_legacy": 0,
+      "only_v1": 0
+    },
+    "passed": true
+  },
+  "legacy_replay_vs_recorded_run": {
+    "identical": 5,
+    "documents": 6,
+    "per_document": [
+      {
+        "direction": "en-vi",
+        "doc_id": "Dich_vu_phap_ly/136",
+        "equal_to_recorded_run": true
+      },
+      {
+        "direction": "en-vi",
+        "doc_id": "Dich_vu_phap_ly/41",
+        "equal_to_recorded_run": true
+      },
+      {
+        "direction": "en-vi",
+        "doc_id": "Dich_vu_phap_ly/78",
+        "equal_to_recorded_run": true
+      },
+      {
+        "direction": "en-vi",
+        "doc_id": "Quyen_dan_su/460",
+        "equal_to_recorded_run": true
+      },
+      {
+        "direction": "en-vi",
+        "doc_id": "Vi_pham_hanh_chinh/111",
+        "equal_to_recorded_run": false
+      },
+      {
+        "direction": "vi-en",
+        "doc_id": "Vi_pham_hanh_chinh/494",
+        "equal_to_recorded_run": true
+      }
+    ]
+  },
+  "v1_replay_vs_recorded_run": {
+    "identical": 5,
+    "documents": 6,
+    "per_document": [
+      {
+        "direction": "en-vi",
+        "doc_id": "Dich_vu_phap_ly/136",
+        "equal_to_recorded_run": true
+      },
+      {
+        "direction": "en-vi",
+        "doc_id": "Dich_vu_phap_ly/41",
+        "equal_to_recorded_run": true
+      },
+      {
+        "direction": "en-vi",
+        "doc_id": "Dich_vu_phap_ly/78",
+        "equal_to_recorded_run": true
+      },
+      {
+        "direction": "en-vi",
+        "doc_id": "Quyen_dan_su/460",
+        "equal_to_recorded_run": true
+      },
+      {
+        "direction": "en-vi",
+        "doc_id": "Vi_pham_hanh_chinh/111",
+        "equal_to_recorded_run": false
+      },
+      {
+        "direction": "vi-en",
+        "doc_id": "Vi_pham_hanh_chinh/494",
+        "equal_to_recorded_run": true
+      }
+    ]
+  }
+}

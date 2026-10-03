@@ -1,0 +1,158 @@
+# pipeline-v1 — HY A1 document MT, one module per step
+
+Pipeline dịch tài liệu Markdown EN↔VI cho VLSP 2026, tách từ `report_lam_3_10/code/lam_docmt` (bản đã sửa
+recovery cap, run `20261003c`) thành **một file cho mỗi bước**, để sửa/tối ưu từng bước độc lập.
+
+**v1 = refactor thuần**: hành vi giống `lam_docmt` từng byte (xem *Nghiệm thu*). Các sửa chất lượng
+(lặp / thiếu / EOS sớm) làm ở các bước sau, mỗi sửa một thay đổi, ghi trong `CHANGE_NOTES.md`.
+`report_lam_3_10/` không bị sửa.
+
+## Trạng thái (03/10/2026)
+
+| Hạng mục | Trạng thái |
+|---|---|
+| Tách module, hành vi giống lam_docmt | completed — replay/mock/test, không GPU (xem *Nghiệm thu*) |
+| `run.sh` / `run-dir` folder → folder | completed với `BACKEND=mock` (kiểm cài đặt); **chưa chạy với model thật** |
+| v1 trên GPU (HF + A1) | **not_started** — code backend HF giống hệt run `20261003b`, nhưng v1 chưa chạy GPU lần nào |
+| Windows | not_checked (code không phụ thuộc Linux; `run.sh` cần bash → dùng lệnh `python -m docmt run-dir` bên dưới) |
+| Dockerfile | not_started |
+| Sửa lặp / thiếu / EOS sớm | not_started (danh sách trong `CHANGE_NOTES.md`) |
+
+## Giao cho người khác chạy
+
+Folder này **không chứa model**. Người nhận cần:
+
+1. **Model A1 merged** (~3,6 GB): `Hy-MT2-1.8B-release/models/merged/` (có `model.safetensors`
+   sha256 `5dc305ae…`, `tokenizer.json` sha256 `b475bbef…`, `config.json`, `chat_template.jinja`). Đặt vào
+   `pipeline-v1/models/hy_a1_merged/` hoặc trỏ biến `MODEL`.
+2. **GPU NVIDIA** (~5 GB VRAM; T4 đã dùng cho các run trước, fp16). Backend `hf` gọi `.to("cuda")`, không chạy CPU.
+3. **Python ≥ 3.10** (đã kiểm trên 3.12), torch bản CUDA, rồi `pip install -r requirements.txt`.
+   Cần `tokenizers ≥ 0.21` và `transformers ≥ 5.6`: bản cũ hơn báo lỗi
+   `data did not match any variant of untagged enum ModelWrapper` khi đọc `tokenizer.json` của A1.
+
+Kiểm cài đặt không cần GPU (mock chỉ chép lại nguồn, **không phải bản dịch**):
+
+```bash
+BACKEND=mock MODEL=/path/hy_a1_merged ./run.sh INPUT_DIR /tmp/check_out en-vi
+```
+
+Chạy thật:
+
+```bash
+MODEL=/path/hy_a1_merged ./run.sh INPUT_DIR OUTPUT_DIR en-vi      # Linux / macOS / Git Bash
+# Windows (không có bash), chạy trong thư mục pipeline-v1:
+python -m docmt run-dir --input-dir IN --output-dir OUT --direction en-vi ^
+    --config configs/hy_a1_structure.json --run-id RUN_ID --backend hf ^
+    --model C:\path\hy_a1_merged --tokenizer C:\path\hy_a1_merged\tokenizer.json
+```
+
+`OUTPUT_DIR` chỉ chứa các file `.md` dịch (cùng cây thư mục với `INPUT_DIR`). Log, trace, cache ở
+`OUTPUT_DIR.work/` (`logs/document_status.jsonl` cho trạng thái từng tài liệu). Exit code ≠ 0 khi có tài
+liệu `failed` hoặc thiếu output; khi đó **không có file output** cho tài liệu đó (chính sách fallback chưa
+chốt). Chạy lại vào cùng `WORK_DIR` thì dùng cache resume (request đã có output không gửi lại); đổi
+config thì phải dùng `WORK_DIR` mới (runtime từ chối ghi run khác config vào thư mục cũ).
+
+Chỉ dùng trong repo VLSP26 (cần thư mục anh em, không đi kèm folder): `tests/` (cần `task 3-10/CHUNG/inputs`,
+hoặc `DOCMT_TEST_INPUTS`), `tools/verify.sh`, `tools/replay_equivalence.py`, `tools/mock_equivalence.py`
+(cần `report_lam_3_10/`), `train/` (cần `report_lam_3_10/01_prompt_contract_for_Linh/token_audit.py`).
+Repo git riêng (`github.com/maaL6/vlsp-pipeline`, private); clone vào `VLSP26/pipeline-v1` thì các đường dẫn
+mặc định đúng, clone chỗ khác thì đặt `VLSP26_ROOT=/path/VLSP26` cho `tools/verify.sh`.
+
+## Chạy (chi tiết)
+
+```bash
+# Final / Docker: folder .md -> folder .md (giữ nguyên cây thư mục); log ở OUTPUT_DIR.work/
+MODEL=/path/hy_a1_merged ./run.sh INPUT_DIR OUTPUT_DIR en-vi
+
+# Dev / smoke: manifest -> delivery layout (predictions/, logs/, tests/) như lam_docmt run
+python -m docmt run --config configs/hy_a1_structure.json --run-id RUN_ID \
+    --manifest MANIFEST --data-root ROOT --out delivery/RUN_ID \
+    --model A1_MERGED --tokenizer TOKENIZER_JSON [--directions en-vi,vi-en] [--dry-run]
+
+# Xem kết quả trung gian của một bước, không cần model/GPU
+python -m docmt inspect --stop-after parse|payload|split|pack|prompt \
+    --manifest MANIFEST --data-root ROOT --tokenizer TOKENIZER_JSON --out stage.jsonl
+
+python -m docmt parse-audit       --manifest M --data-root R --tokenizer T --out parser.json --both-directions
+python -m docmt validate-existing --manifest M --data-root R --pred-root PRED --out diag.json
+```
+
+Backend: `hf` (transformers, GPU CUDA) và `mock` (test). llama.cpp đã bỏ. Preset: `configs/*.json` (một file mỗi nhánh; `hy_a1_structure.json` = config của
+run GPU `hy_a1_structure__kaggleT4__20261003b` trừ run_id/đường dẫn/hash). `--set key=value` ghi đè.
+
+## Các bước và file
+
+Luồng một tài liệu (chỉ đọc nguồn, không bao giờ đọc reference):
+
+| Bước | File | Vào → Ra | Ghi chú |
+|---|---|---|---|
+| s01 parse | `steps/s01_parse.py`, `steps/s01_parse_lines.py` (luật dòng/nhãn/tên), `steps/s01_parse_audit.py` | raw text → `Node[]` | `"".join(n.raw) == src`; header/bảng/chữ ký/scope |
+| s02 payload | `steps/s02_payload.py` | `content_raw` → `payload` | `normalize(unwrap(raw))` |
+| s03 split | `steps/s03_split.py` | `Node[]` → work nodes (`nX.1`…) | cắt theo câu → phẩy → khoảng trắng, không cắt số |
+| s03 pack | `steps/s03_pack.py` | work nodes → `Unit[]` + marker `[SEG_…]` | text ≤768/8 node, bảng ≤384/16, chữ ký ≤128 |
+| s04 prompt | `steps/s04_prompt.py` | unit (+evidence) → prompt | `HY_DEFAULT` / `HY_TERMS` / `HY_BACKGROUND` |
+| s05 budget | `steps/s05_budget.py` | prompt → `max_new_tokens`, bỏ evidence nếu thiếu chỗ | `min(4096−prompt−32, max(256, ⌈2.5·src⌉+128))` |
+| (generate) | `backends/hf.py`, `backends/mock.py`, `backends/replay.py` | `GenRequest[]` → `GenResult[]` | greedy, fp16, rep 1.05 |
+| s06 parse output | `steps/s06_parse_output.py` | output → segment theo node | lỗi marker, rò marker nội bộ |
+| s07 validate | `steps/s07_validate_unit.py` + `checks/{numbers,headings,loops,lexical}.py` | segment → hard / warnings | **hard** kích hoạt recovery; warning chỉ ghi |
+| s08 recovery | `steps/s08_recovery.py` | unit lỗi → unit con | marker lỗi → từng node; khác → gom ≤256 token; 1 vòng |
+| s09 select | `steps/s09_select.py` | lượt đầu vs recovery → text cuối mỗi node | ít hard hơn thắng; hoà giữ lượt đầu |
+| s10 assemble | `steps/s10_assemble.py` | text node → Markdown | `lead + bản dịch + trail`, giữ layout |
+| s10 doc check | `steps/s10_doc_check.py` | tài liệu → status | coverage, heading, số, lặp, U+FFFD |
+
+Phần còn lại:
+
+- `engine/doc_job.py` — điều phối một tài liệu: gọi các bước theo thứ tự, log lỗi, ghi trace. Không chứa
+  quy tắc nghiệp vụ; muốn đổi quy tắc thì sửa file bước tương ứng.
+- `engine/run.py` (một hướng của run, cache, run.json), `engine/scheduler.py` (gom request thành batch),
+  `engine/api.py` (`run_manifest`, `translate_document`, layout delivery), `engine/inspect.py`.
+- `context/` — evidence cho prompt: `source_index.py` (tiêu đề/định nghĩa/Điều được viện dẫn),
+  `glossary.py`, `memory.py` (bản dịch đã chấp nhận), `evidence.py` (chọn + cắt ≤512 token). **Tắt** ở
+  `hy_a1_structure`; chỉ bật khi có checkpoint context-SFT.
+- `core/` — `datatypes.py` (Node/Unit/GenRequest/…: interface giữa các bước, giữ ổn định), `config.py`,
+  `tok.py`, `text_normalize.py` (bản copy **byte-identical** của chuẩn nhóm, test kiểm), `hashing.py`.
+- `inputs/sources.py` — manifest hoặc folder → `DocItem`. `tracing/` — trace, status, cache resume, smoke table.
+- `docmt/train/` + `train/` — encode SFT, train context-SFT, build/audit derivative (ghi vào `train/data/`).
+
+Thay một bước bằng bản thử nghiệm mà không sửa file gốc: `run_manifest(..., components={"check_unit": my_fn})`
+(xem `Components` trong `engine/doc_job.py`).
+
+## Đo từng bước
+
+| Bước sửa | Đo không cần GPU | Cách |
+|---|---|---|
+| s01–s03 | ✅ | `parse-audit` (84/84), `inspect --stop-after parse/split/pack` rồi so JSONL |
+| s04–s05 | một phần | `inspect --stop-after prompt` (token, budget); chất lượng cần GPU |
+| s07, s09, s10 | ✅ | replay trace đã có (`backends/replay.py`, `tools/replay_equivalence.py`): thấy ngay output/status đổi thế nào |
+| s08, decoding | ❌ | prompt recovery mới không có trong trace → chạy GPU (smoke 9 tài liệu) |
+
+## Nghiệm thu refactor (`tools/verify.sh PYTHON`)
+
+Kết quả hiện tại (03/10/2026, không GPU):
+
+- `pytest`: **55/55** (50 test port từ lam_docmt + 5 test v1).
+- Replay trace GPU run `20261003b` (smoke6), lam_docmt vs v1: prediction **6/6**, document_status **6/6**,
+  trace **1111/1111**, prompt **972/972** giống từng byte → `reports/replay_equivalence.json`.
+  2 request không có trong trace (`111:u0334.r4/.r5`) = 2 mảnh mới của bản sửa recovery cap (369 → 233+136);
+  vì vậy 5/6 prediction trùng run `b`, `111` khác — đúng dự kiến, giống nhau giữa lam_docmt và v1.
+- Mock 4 nhánh (structure, source_context, +glossary, +history), lam_docmt vs v1: giống từng byte →
+  `reports/mock_equivalence.json` (có HY_BACKGROUND/HY_TERMS, evidence title/definition/reference/glossary/history).
+- `parse-audit` 84/84 roundtrip; totals và từng tài liệu giống báo cáo đã bàn giao (chỉ khác thời gian) →
+  `reports/parser_roundtrip_84.json`. `tools/audit_recovery_caps.py` giống hệt báo cáo cũ.
+
+Mọi thay đổi **không** được phép đổi hành vi phải qua `tools/verify.sh`. Thay đổi **có chủ đích** đổi
+hành vi thì replay sẽ báo khác: đó là bằng chứng cần ghi vào `CHANGE_NOTES.md`.
+
+## Cấu trúc thư mục
+
+```
+pipeline-v1/
+├── run.sh  requirements.txt  README.md  CHANGE_NOTES.md
+├── configs/        preset JSON mỗi nhánh
+├── docmt/          package (core, inputs, steps, checks, context, backends, engine, tracing, train, cli)
+├── train/          build_hy_derivative.py, audit_hy_derivative.py
+├── tests/          pytest (cần task 3-10/CHUNG/inputs)
+├── tools/          verify.sh, replay_equivalence.py, mock_equivalence.py, check_names.py,
+│                   audit_recovery_caps.py, compare_runs.py, split_from_lam_docmt.py (script tách, lưu nguồn gốc)
+└── reports/        bằng chứng nghiệm thu
+```
