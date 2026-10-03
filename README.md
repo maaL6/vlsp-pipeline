@@ -143,16 +143,67 @@ Kết quả hiện tại (03/10/2026, không GPU):
 Mọi thay đổi **không** được phép đổi hành vi phải qua `tools/verify.sh`. Thay đổi **có chủ đích** đổi
 hành vi thì replay sẽ báo khác: đó là bằng chứng cần ghi vào `CHANGE_NOTES.md`.
 
-## Cấu trúc thư mục
+## Cấu trúc thư mục và vai trò
+
+Ký hiệu cột **Chạy dịch**: **cần** = thiếu thì `run.sh` không chạy; *dev* = chỉ để phát triển/kiểm tra;
+*tắt* = có code nhưng không dùng ở nhánh chính `hy_a1_structure`.
 
 ```
 pipeline-v1/
-├── run.sh  requirements.txt  README.md  CHANGE_NOTES.md
-├── configs/        preset JSON mỗi nhánh
-├── docmt/          package (core, inputs, steps, checks, context, backends, engine, tracing, train, cli)
-├── train/          build_hy_derivative.py, audit_hy_derivative.py
-├── tests/          pytest (cần task 3-10/CHUNG/inputs)
-├── tools/          verify.sh, replay_equivalence.py, mock_equivalence.py, check_names.py,
-│                   audit_recovery_caps.py, compare_runs.py, split_from_lam_docmt.py (script tách, lưu nguồn gốc)
-└── reports/        bằng chứng nghiệm thu
+├── run.sh  requirements.txt  README.md  CHANGE_NOTES.md  .gitignore
+├── configs/   docmt/   tests/   tools/   train/   reports/
 ```
+
+### Cấp gốc
+
+| Thư mục / file | Tác dụng | Chạy dịch |
+|---|---|---|
+| `run.sh` | Lệnh cuối: folder `.md` → folder `.md` (gọi `python -m docmt run-dir`) | **cần** |
+| `requirements.txt` | Dependency (torch CUDA cài riêng) | **cần** |
+| `configs/` | Preset JSON mỗi nhánh. `hy_a1_structure.json` là nhánh chính, `run.sh` đọc mặc định; 3 file `hy_a1_source_context*.json` cho nhánh context | **cần** (`hy_a1_structure.json`); 3 preset context *tắt* |
+| `docmt/` | Toàn bộ code pipeline (bảng bên dưới) | **cần** |
+| `tests/` | 55 test pytest; cần `task 3-10/CHUNG/inputs` (hoặc `DOCMT_TEST_INPUTS`) | *dev* |
+| `tools/` | Nghiệm thu và audit (bảng bên dưới) | *dev* |
+| `train/` | `build_hy_derivative.py`, `audit_hy_derivative.py`: tạo/kiểm dữ liệu context-SFT; đọc `report_lam_3_10/.../token_audit.py`, ghi vào `train/data/` (bị ignore) | *dev* (train, không phải inference) |
+| `reports/` | Bằng chứng nghiệm thu dạng JSON (replay, mock, parse-audit 84, recovery cap); `tools/verify.sh` tạo lại được; có đường dẫn máy local | không |
+| `README.md`, `CHANGE_NOTES.md` | Hướng dẫn; lịch sử thay đổi hành vi và danh sách lỗi đang chờ sửa | không |
+| `.gitignore` | Chặn `models/`, `*.safetensors`, `*.work/`, `delivery/`, `train/data/`, cache Python | không |
+
+### Bên trong `docmt/`
+
+| Package / file | Tác dụng | Chạy dịch |
+|---|---|---|
+| `cli.py`, `__main__.py` | Lệnh `run`, `run-dir`, `inspect`, `parse-audit`, `validate-existing`, `smoke-table` | **cần** |
+| `core/` | `datatypes.py` (Node, Unit, GenRequest, GenResult…: interface giữa các bước), `config.py` (RunConfig, preset nhánh), `tok.py` (đếm token HY), `text_normalize.py` (copy byte-identical chuẩn nhóm), `hashing.py` (sha256, model/code hash), `codes.py` (helper nhỏ) | **cần** |
+| `inputs/` | `sources.py`: manifest hoặc folder → `DocItem`, chỉ đọc phía nguồn | **cần** (1 file, có thể gộp vào `engine/`) |
+| `steps/` | 10 bước của pipeline (bảng *Các bước và file*) | **cần**; riêng `s01_parse_audit.py` *dev* (lệnh `parse-audit`) |
+| `checks/` | Hàm kiểm nguồn vs output dùng ở s07 và s10: `numbers.py`, `headings.py`, `loops.py`, `lexical.py` (phủ định, modal, chưa dịch), `common.py` | **cần** |
+| `backends/` | `hf.py` (transformers, GPU CUDA, fp16, batch), `base.py` (interface, đếm OOM/retry), `mock.py` (echo + lỗi giả lập cho test), `replay.py` (trả output đã ghi trong trace, đo offline) | **cần** (`hf`); `mock`/`replay` *dev* |
+| `engine/` | `doc_job.py` (điều phối một tài liệu: gọi bước, log, trace), `scheduler.py` (gom request thành batch), `run.py` (một hướng của run, cache, run.json), `api.py` (`run_manifest`, `translate_document`, layout delivery), `inspect.py` (dump kết quả trung gian) | **cần**; `inspect.py` *dev* |
+| `tracing/` | `writer.py` (trace, status, prompts, lỗi), `cache.py` (resume theo prompt), `records.py` (bản ghi trace, environment), `smoke_table.py` (`smoke_result.csv` theo mẫu bàn giao) | **cần** (resume + log); `smoke_table.py` chỉ cho báo cáo |
+| `context/` | Evidence cho prompt `HY_BACKGROUND`: `source_index.py` (tiêu đề/đường dẫn, định nghĩa, Điều được viện dẫn), `glossary.py`, `memory.py` (bản dịch đã chấp nhận), `evidence.py` (chọn + cắt ≤512 token), `common.py` | *tắt* — chỉ bật khi có checkpoint context-SFT |
+| `train/` | `sft.py` (encode mẫu SFT + smoke forward/backward), `train_sft.py` (train LoRA context-SFT) | không (train) |
+
+### `tools/`
+
+| File | Tác dụng | Ghi chú |
+|---|---|---|
+| `verify.sh` | Một lệnh nghiệm thu: pytest + check tên + replay + mock 4 nhánh | Dùng sau mọi thay đổi |
+| `replay_equivalence.py` | Chạy lam_docmt và v1 trên trace GPU run `20261003b`, so từng byte | Mốc so sánh hiện là lam_docmt (xem lưu ý dưới) |
+| `mock_equivalence.py` | Như trên với MockBackend cho 4 nhánh (kể cả context) | như trên |
+| `compare_runs.py` | BLEU/chrF++ smoke6 giữa các hệ thống (cần sacrebleu và reference) | Chỉ chẩn đoán, không dùng để tune |
+| `check_names.py` | Kiểm tên global bị mất khi tách file | Chỉ hữu ích lúc tách; xoá được |
+| `audit_recovery_caps.py` | Kiểm hồi quy lỗi recovery 369 > 256 token | Đã có test fixture tương ứng; xoá được |
+| `split_from_lam_docmt.py` | Script tách lam_docmt thành v1 (lưu nguồn gốc) | Dùng một lần; xoá được (git history giữ) |
+
+### Thừa hoặc cần dọn (chưa làm)
+
+- Xoá được: `tools/split_from_lam_docmt.py`, `tools/check_names.py`, `tools/audit_recovery_caps.py`.
+- Nên tách khỏi pipeline inference: `docmt/train/` và `train/` (phụ thuộc `report_lam_3_10/`).
+- Tuỳ quyết định: `context/` + 3 preset context (bỏ nếu không làm source context trước freeze 08/10);
+  `reports/` có thể đưa vào `.gitignore`.
+- Trong code: hai hàm payload trùng nhau (`s02_payload.make_payload`, `s03_split.payload_of`, giống nhau
+  trên 19.257 node); trường config `server_url` không còn dùng.
+- **Lưu ý khi bắt đầu sửa chất lượng:** `replay_equivalence.py`/`mock_equivalence.py` so v1 với lam_docmt.
+  Khi v1 cố ý đổi hành vi, hai công cụ này sẽ báo khác (đúng thiết kế); khi đó đổi mốc so sánh sang
+  commit v1 trước đó.
