@@ -1,0 +1,80 @@
+{
+  "variant": "markers",
+  "run_id": "hy_a1_structure__pt50__kaggleT4__20261004",
+  "config": "configs/hy_a1_structure.json",
+  "batch_size": 4,
+  "model_sha256": "5dc305ae6c33c15a8440a4a8f9183e411004079eb737bc2da417b6a932dead81",
+  "bundle": "bf21111",
+  "gpu_count": 2,
+  "gpu_name": "Tesla T4",
+  "reference_used_by_pipeline": false,
+  "utc_started": "2026-10-03T18:15:18.227718+00:00",
+  "directions": {
+    "en-vi": {
+      "gpu": 0,
+      "state": "finished",
+      "returncode": 0,
+      "seconds": 19890.2,
+      "predictions": 50,
+      "expected": 50,
+      "document_status": {
+        "completed": 48,
+        "completed_with_unresolved": 2
+      },
+      "run": {
+        "documents": 50,
+        "nodes": 16083,
+        "units": 2214,
+        "requests": 8127,
+        "requests_sent": 7347,
+        "cache_hits": 780,
+        "recovery_requests": 5913,
+        "retry_count": 771,
+        "runtime": 19825.312,
+        "prompt_tokens": 936017,
+        "generated_tokens": 1126592,
+        "peak_vram": 4349452800,
+        "oom_count": 0,
+        "op_error_count": 0,
+        "unresolved_units": 2,
+        "unresolved_empty_nodes": 0
+      }
+    },
+    "vi-en": {
+      "gpu": 1,
+      "state": "finished",
+      "returncode": 0,
+      "seconds": 11160.1,
+      "predictions": 50,
+      "expected": 50,
+      "document_status": {
+        "completed": 48,
+        "completed_with_unresolved": 2
+      },
+      "run": {
+        "documents": 50,
+        "nodes": 16471,
+        "units": 2314,
+        "requests": 4341,
+        "requests_sent": 4078,
+        "cache_hits": 263,
+        "recovery_requests": 2027,
+        "retry_count": 268,
+        "runtime": 11093.334,
+        "prompt_tokens": 1091826,
+        "generated_tokens": 658455,
+        "peak_vram": 4426228736,
+        "oom_count": 0,
+        "op_error_count": 0,
+        "unresolved_units": 3,
+        "unresolved_empty_nodes": 0
+      }
+    }
+  },
+  "benchmark": {
+    "returncode": 0,
+    "scores": "scores_markers.json",
+    "note": "--allow-missing: a missing prediction is scored as an empty translation"
+  },
+  "utc_finished": "2026-10-03T23:47:47.044805+00:00"
+}

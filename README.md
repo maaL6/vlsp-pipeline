@@ -31,6 +31,7 @@ Mỗi phương án chạy một lần; đủ 50/50 bản dịch mỗi chiều, 0
 - v1.2 (sau khi đo): unit gom của B bị lỗi bất kỳ được dịch lại từng node → BLEU giữ nguyên
   (68.90 / 46.61), số doc còn lỗi cấu trúc giảm 7 → 2 (đo bằng replay output GPU của B và C,
   `reports/public_test_b_v12_replay_20261004.json`; chưa chạy lại GPU).
+- Output gốc của cả 3 lần chạy (bản dịch .md, điểm, log, trace để replay): `results/public_test_20261004/`.
 - Chi tiết (điểm từng doc, recovery, token, VRAM): `reports/public_test_abc_20261004.json`. Cách chạy lại:
   `kaggle/public_test/README.md`. Code B được kiểm bằng replay trace GPU của chính run B: 100/100 bản dịch
   giống từng byte.

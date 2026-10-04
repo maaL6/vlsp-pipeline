@@ -1,0 +1,31 @@
+
+=== /kaggle/working/hyp_nomarker [en-vi]: 50 documents, thiếu 0
+  raw   BLEU =  67.69  chrF =  82.64  (BP=0.946, ratio=0.947)
+  nfc   BLEU =  67.71  chrF =  82.67  (BP=0.946, ratio=0.947)
+  text  BLEU =  67.25  chrF =  82.58  (BP=0.945, ratio=0.946)
+  Signature: nrefs:1|case:mixed|eff:no|tok:13a|smooth:exp|version:2.6.0
+  [!] 1 doc có độ dài < 70% reference (có thể bị cắt cụt/dịch thiếu):
+      Quyen_dan_su/390               len=0.64  BLEU=1.5
+  5 doc điểm thấp nhất:
+      Quyen_dan_su/390               BLEU=  1.5  len=0.64
+      Vi_pham_hanh_chinh/419         BLEU= 27.0  len=0.89
+      Quyen_dan_su/462               BLEU= 45.4  len=0.93
+      Quyen_dan_su/454               BLEU= 47.1  len=1.02
+      Trach_nhiem_hinh_su/140        BLEU= 48.1  len=1.10
+
+=== /kaggle/working/hyp_nomarker [vi-en]: 50 documents, thiếu 0
+  raw   BLEU =  45.23  chrF =  78.23  (BP=1.000, ratio=1.031)
+  nfc   BLEU =  45.23  chrF =  78.23  (BP=1.000, ratio=1.031)
+  text  BLEU =  44.36  chrF =  78.18  (BP=1.000, ratio=1.031)
+  Signature: nrefs:1|case:mixed|eff:no|tok:13a|smooth:exp|version:2.6.0
+  5 doc điểm thấp nhất:
+      Quyen_dan_su/390               BLEU=  7.4  len=1.54
+      Vi_pham_hanh_chinh/419         BLEU= 19.5  len=1.13
+      Quyen_dan_su/454               BLEU= 22.7  len=1.03
+      Quyen_dan_su/107               BLEU= 29.5  len=1.23
+      Quyen_dan_su/462               BLEU= 29.6  len=1.02
+
+| System | BLEU (raw) | chrF (raw) | BLEU (nfc) | BLEU (text) | Thiếu |
+|---|---|---|---|---|---|
+| /kaggle/working/hyp_nomarker [en-vi] | 67.69 | 82.64 | 67.71 | 67.25 | 0 |
+| /kaggle/working/hyp_nomarker [vi-en] | 45.23 | 78.23 | 45.23 | 44.36 | 0 |
