@@ -1,0 +1,112 @@
+{
+ "date": "2026-10-04",
+ "what": "v1.2 recovery rule (failed newline unit -> each node alone) evaluated offline: pipeline v1.2 run on the public test (50 docs x 2 directions) with ReplayBackend over the recorded Kaggle GPU traces of B (v1.1) and C (single-node requests = the new recovery requests)",
+ "replay_misses": {
+  "en-vi": 0,
+  "vi-en": 0
+ },
+ "caveat": "C's outputs were generated in other fp16 batches; batch padding can change a few tokens compared with a real v1.2 run",
+ "scores": {
+  "B_v1.1": {
+   "en-vi": {
+    "raw": {
+     "bleu": 68.9,
+     "chrf": 83.39
+    },
+    "text": {
+     "bleu": 68.48,
+     "chrf": 83.32
+    },
+    "missing": 0
+   },
+   "vi-en": {
+    "raw": {
+     "bleu": 46.62,
+     "chrf": 79.17
+    },
+    "text": {
+     "bleu": 45.79,
+     "chrf": 79.13
+    },
+    "missing": 0
+   }
+  },
+  "B_v1.2": {
+   "en-vi": {
+    "raw": {
+     "bleu": 68.9,
+     "chrf": 83.38
+    },
+    "text": {
+     "bleu": 68.47,
+     "chrf": 83.32
+    },
+    "missing": 0
+   },
+   "vi-en": {
+    "raw": {
+     "bleu": 46.61,
+     "chrf": 79.17
+    },
+    "text": {
+     "bleu": 45.78,
+     "chrf": 79.12
+    },
+    "missing": 0
+   }
+  }
+ },
+ "document_status": {
+  "B_v1.1": {
+   "en-vi": {
+    "completed": 44,
+    "completed_with_unresolved": 6
+   },
+   "vi-en": {
+    "completed": 49,
+    "completed_with_unresolved": 1
+   }
+  },
+  "B_v1.2": {
+   "en-vi": {
+    "completed": 48,
+    "completed_with_unresolved": 2
+   },
+   "vi-en": {
+    "completed": 50
+   }
+  }
+ },
+ "unresolved_units": {
+  "B_v1.1": {
+   "en-vi": 7,
+   "vi-en": 1
+  },
+  "B_v1.2": {
+   "en-vi": 2,
+   "vi-en": 0
+  },
+  "B_v1.2_remaining": [
+   "So_huu_tri_tue/118 en-vi protected_heading_lost (single-node retry not better, first pass kept)",
+   "Vi_pham_hanh_chinh/20 en-vi line_count_mismatch (already independent in v1.1)"
+  ]
+ },
+ "requests": {
+  "B_v1.1": {
+   "en-vi": 5822,
+   "vi-en": 6156
+  },
+  "B_v1.2": {
+   "en-vi": 5856,
+   "vi-en": 6161
+  }
+ },
+ "changed_predictions": [
+  "en-vi Thu_tuc_to_tung/164",
+  "en-vi Trach_nhiem_hinh_su/53",
+  "en-vi Vi_pham_hanh_chinh/289",
+  "en-vi So_huu_tri_tue/7",
+  "vi-en So_huu_tri_tue/7"
+ ],
+ "check": "committed v1.2 code reproduces the simulated outputs: 50/50 + 50/50 byte-identical"
+}

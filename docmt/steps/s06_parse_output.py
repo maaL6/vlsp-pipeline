@@ -111,8 +111,9 @@ def _parse_lines(nids, text: str) -> ParseResult:
     adds an empty line between paragraphs). Any other count of non-empty lines -- the model merged
     two nodes into one line, split one node over two lines, or dropped/added a line -- cannot be
     mapped safely, so nothing is assigned and the hard failure is
-    line_count_mismatch:<got>/<want>; s08 then re-translates each node of the unit alone, as for
-    a marker failure. Measured on the public test: 21% of first-pass units (A: 12-35% marker
+    line_count_mismatch:<got>/<want>; s08 then re-translates each node of the unit alone (as it
+    does for any failed newline unit). A matching count does not prove alignment: a split plus
+    a merge keeps the count; the heading check in s07 catches the shifts that move a heading. Measured on the public test: 21% of first-pass units (A: 12-35% marker
     failures). Content checks (numbers, headings, loops ...) run afterwards in s07 as usual."""
     extra = {"mode": "lines", "found": 0}
     if not text.strip():

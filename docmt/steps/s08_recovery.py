@@ -104,9 +104,24 @@ def should_recover(hard, cfg) -> bool:
 
 
 def recovery_mode(unit, hard):
-    """(mode, independent): marker failures of a multi-node unit -> independent single-node calls,
-    anything else -> regroup into <= recovery_cap units."""
-    independent = is_marker_failure(hard) and len(unit.node_ids) > 1
+    """(mode, independent) for the single recovery round of a unit with hard failures.
+
+    - multi-node unit sent with markers ("marker" mode, phương án A): a marker failure ->
+      "independent" (each node alone); any other failure -> "regroup" into <= recovery_cap units
+      that again carry markers;
+    - multi-node unit sent newline-joined ("newline" mode, phương án B, Unit.markers == []):
+      ALWAYS "independent", whatever the failure. Reason (v1.2, 04/10/2026): with newline joining
+      a failed unit is most often mis-aligned (the model merged a heading with the next paragraph,
+      split a sentence over two lines ...), even when the line count matched and the visible
+      failure is e.g. protected_heading_lost. A regrouped retry is newline-joined again and the
+      model repeats the same merge (line_count_mismatch), so the shifted first pass was kept.
+      Sending each node alone cannot be mis-aligned. Public test, replayed from recorded GPU
+      outputs: same BLEU (68.90 / 46.61), unresolved units 7+1 -> 2+0, +39 requests;
+    - single-node unit: "regroup" (split into <= recovery_cap pieces), unchanged."""
+    if len(unit.node_ids) <= 1:
+        return "regroup", False
+    newline_joined = not unit.markers
+    independent = newline_joined or is_marker_failure(hard)
     return ("independent" if independent else "regroup"), independent
 
 

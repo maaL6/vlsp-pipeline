@@ -1,5 +1,35 @@
 # CHANGE_NOTES — pipeline-v1
 
+## v1.2 (04/10/2026) — B: unit gom bị lỗi luôn được dịch lại từng node
+
+**Vấn đề** (log run B, v1.1): 7 unit en-vi + 1 vi-en còn lỗi sau recovery. Phần lớn là lệch dòng mà số dòng
+vẫn khớp (model tách một câu thành 2 dòng rồi gộp tiêu đề với đoạn sau) → chỉ lộ ra qua
+`protected_heading_lost`. Lỗi này không thuộc `MARKER_CODES` nên s08 dùng *regroup* (nhóm ≤256 token,
+vẫn nối xuống dòng); model lại gộp tiêu đề → `line_count_mismatch`, recovery tệ hơn → giữ lượt đầu bị lệch.
+Ví dụ `Vi_pham_hanh_chinh/289`: dòng "c) …" bịa thêm, "5./6." lệch một ô, "Điều 15." dính vào "Phạt tiền…".
+
+**Thay đổi**: `s08_recovery.recovery_mode`: unit nhiều node nối xuống dòng (`Unit.markers == []`) bị lỗi hard
+bất kỳ → luôn *independent* (từng node). Unit có marker (A) và unit 1 node giữ nguyên quy tắc cũ.
+Chỉ áp dụng ở recovery; lượt đầu, kiểm tra, chọn bản giữ nguyên.
+
+**Đo (không GPU)**: chạy v1.2 trên public test với ReplayBackend lấy output từ trace GPU của run B và run C
+(request "từng node" của recovery mới giống hệt request lượt đầu của C): 0 request thiếu.
+`reports/public_test_b_v12_replay_20261004.json`:
+
+| | B v1.1 | B v1.2 |
+|---|---|---|
+| BLEU en-vi / vi-en | 68.90 / 46.62 | 68.90 / 46.61 |
+| Doc `completed` en-vi / vi-en | 44 / 49 | **48 / 50** |
+| Unit unresolved en-vi / vi-en | 7 / 1 | 2 / 0 |
+| Request en-vi / vi-en | 5.822 / 6.156 | 5.856 / 6.161 |
+
+BLEU không đổi (5 file đổi, mỗi doc ±0,13); lợi ích là cấu trúc (4 doc hết lệch tiêu đề/đoạn). Còn lại:
+`So_huu_tri_tue/118` (dịch lại từng node không ít lỗi hơn, giữ lượt đầu) và `Vi_pham_hanh_chinh/20`.
+Lưu ý: output của C sinh trong batch fp16 khác → run GPU thật có thể lệch vài token.
+
+**Nghiệm thu**: `tools/verify.sh` 61/61 test, replay `20261003b` + mock 4 nhánh (config A) giống từng byte;
+code commit tái tạo đúng 100/100 bản dịch của mô phỏng.
+
 ## v1.1 (04/10/2026) — phương án B: gom node, không marker (mặc định mới)
 
 **Quyết định** (Lâm, 04/10/2026): chọn B sau khi so 3 phương án trên full public test (50 doc × en-vi/vi-en,

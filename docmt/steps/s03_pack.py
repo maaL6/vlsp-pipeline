@@ -71,7 +71,8 @@ def _index_of(marker_str: str) -> int:
 #       At the request of ...
 #     Same packing (same caps, same max_nodes), but nodes are joined by '\n' only and s06 maps
 #     output line i -> node i; a different number of non-empty lines is the hard failure
-#     line_count_mismatch, which s08 handles like a marker failure (each node re-sent alone).
+#     line_count_mismatch. In s08 every failed newline unit (line count or any other hard
+#     failure) is re-sent node by node, since a retry joined by newlines again can be mis-aligned.
 #     Node payloads never contain '\n' (s02 unwraps them), so one node = one line.
 #
 # Public test 50 docs x 2 directions (kaggle/public_test, A1, T4, batch 4): B 68.90 / 46.62 BLEU

@@ -28,6 +28,9 @@ Mỗi phương án chạy một lần; đủ 50/50 bản dịch mỗi chiều, 0
 - Bỏ marker không làm kém đi: B − A = +0,20 [+0,05, +0,37] en-vi, +0,25 [−0,05, +0,65] vi-en.
 - B nhanh hơn A ~1 h ở en-vi vì ít phải dịch lại: lượt đầu A mất marker ở 35% unit en-vi, B lệch số
   dòng ở 21% unit; unit lỗi được dịch lại từng node.
+- v1.2 (sau khi đo): unit gom của B bị lỗi bất kỳ được dịch lại từng node → BLEU giữ nguyên
+  (68.90 / 46.61), số doc còn lỗi cấu trúc giảm 7 → 2 (đo bằng replay output GPU của B và C,
+  `reports/public_test_b_v12_replay_20261004.json`; chưa chạy lại GPU).
 - Chi tiết (điểm từng doc, recovery, token, VRAM): `reports/public_test_abc_20261004.json`. Cách chạy lại:
   `kaggle/public_test/README.md`. Code B được kiểm bằng replay trace GPU của chính run B: 100/100 bản dịch
   giống từng byte.
@@ -133,7 +136,7 @@ Luồng một tài liệu (chỉ đọc nguồn, không bao giờ đọc referen
 | (generate) | `backends/hf.py`, `backends/mock.py`, `backends/replay.py` | `GenRequest[]` → `GenResult[]` | greedy, fp16, rep 1.05 |
 | s06 parse output | `steps/s06_parse_output.py` | output → segment theo node | B: dòng i → node i, lệch số dòng = `line_count_mismatch`; A: lỗi marker, rò marker |
 | s07 validate | `steps/s07_validate_unit.py` + `checks/{numbers,headings,loops,lexical}.py` | segment → hard / warnings | **hard** kích hoạt recovery; warning chỉ ghi |
-| s08 recovery | `steps/s08_recovery.py` | unit lỗi → unit con | marker lỗi → từng node; khác → gom ≤256 token; 1 vòng |
+| s08 recovery | `steps/s08_recovery.py` | unit lỗi → unit con | B: mọi lỗi → từng node; A: marker lỗi → từng node, khác → gom ≤256 token; 1 vòng |
 | s09 select | `steps/s09_select.py` | lượt đầu vs recovery → text cuối mỗi node | ít hard hơn thắng; hoà giữ lượt đầu |
 | s10 assemble | `steps/s10_assemble.py` | text node → Markdown | `lead + bản dịch + trail`, giữ layout |
 | s10 doc check | `steps/s10_doc_check.py` | tài liệu → status | coverage, heading, số, lặp, U+FFFD |
@@ -168,7 +171,7 @@ Thay một bước bằng bản thử nghiệm mà không sửa file gốc: `run
 
 Kết quả hiện tại (03/10/2026, không GPU):
 
-- `pytest`: **60/60** (50 test port từ lam_docmt + 5 test v1 + 5 test phương án B, 04/10).
+- `pytest`: **61/61** (50 test port từ lam_docmt + 5 test v1 + 6 test phương án B, 04/10).
 - Replay/mock bên dưới chạy với config A (`hy_a1_structure.json`): chứng minh thêm phương án B không đổi
   hành vi của A. Hành vi của B được kiểm riêng bằng replay trace Kaggle của run B (100/100 giống từng byte).
 - Replay trace GPU run `20261003b` (smoke6), lam_docmt vs v1: prediction **6/6**, document_status **6/6**,
@@ -202,7 +205,7 @@ pipeline-v1/
 | `requirements.txt` | Dependency (torch CUDA cài riêng) | **cần** |
 | `configs/` | Preset JSON mỗi nhánh (bảng ở *Chạy (chi tiết)*). `hy_a1_structure_newline.json` (B) là nhánh chính, `run.sh` đọc mặc định | **cần** (`hy_a1_structure_newline.json`); A, C để so sánh/nghiệm thu; 3 preset context *tắt* |
 | `docmt/` | Toàn bộ code pipeline (bảng bên dưới) | **cần** |
-| `tests/` | 60 test pytest; cần `task 3-10/CHUNG/inputs` (hoặc `DOCMT_TEST_INPUTS`) | *dev* |
+| `tests/` | 61 test pytest; cần `task 3-10/CHUNG/inputs` (hoặc `DOCMT_TEST_INPUTS`) | *dev* |
 | `tools/` | Nghiệm thu và audit (bảng bên dưới) | *dev* |
 | `train/` | `build_hy_derivative.py`, `audit_hy_derivative.py`: tạo/kiểm dữ liệu context-SFT; đọc `report_lam_3_10/.../token_audit.py`, ghi vào `train/data/` (bị ignore) | *dev* (train, không phải inference) |
 | `reports/` | Bằng chứng nghiệm thu dạng JSON (replay, mock, parse-audit 84, recovery cap; `tools/verify.sh` tạo lại được) và `public_test_abc_20261004.json` (kết quả A/B/C); có đường dẫn máy local | không |

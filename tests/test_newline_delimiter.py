@@ -8,7 +8,7 @@ import pytest
 
 from docmt.steps.s03_pack import render_payload, unit_markers, use_markers
 from docmt.steps.s06_parse_output import parse_output
-from docmt.steps.s08_recovery import is_marker_failure
+from docmt.steps.s08_recovery import is_marker_failure, recovery_mode
 
 V1 = Path(__file__).resolve().parents[1]
 
@@ -47,6 +47,18 @@ def test_parse_lines():
     assert bad.hard == ["line_count_mismatch:2/3"] and bad.segments == {}
     assert is_marker_failure(bad.hard)
     assert parse_output(_unit(2), "  ").hard == ["empty_output"]
+
+
+def test_recovery_mode_newline_units_always_independent():
+    newline_unit = _unit(3)                                        # markers == [] -> newline mode
+    marker_unit = _unit(3)
+    marker_unit.markers = ["[SEG_000000]", "[SEG_000001]", "[SEG_000002]"]
+    heading = ["protected_heading_lost:n00001"]
+    assert recovery_mode(newline_unit, heading) == ("independent", True)
+    assert recovery_mode(newline_unit, ["line_count_mismatch:2/3"]) == ("independent", True)
+    assert recovery_mode(marker_unit, heading) == ("regroup", False)          # A unchanged
+    assert recovery_mode(marker_unit, ["marker_missing:n00001"]) == ("independent", True)
+    assert recovery_mode(_unit(1), ["no_eos"]) == ("regroup", False)
 
 
 def test_newline_config_run_dir_mock(tmp_path):
