@@ -58,14 +58,65 @@ def _index_of(marker_str: str) -> int:
         raise ValueError(f"not a marker: {marker_str!r}")
     return int(m.group(2))
 
+# ------------------------------------------------------------------------- payload delimiter
+# How the nodes of a multi-node unit are separated in the prompt (cfg.extra["payload_delimiter"]):
+#
+#   "marker"  (default, configs/hy_a1_structure.json = phương án A)
+#       [SEG_000010] Pursuant to ...
+#       [SEG_000011] At the request of ...
+#     s06 splits the output on the markers; a lost/extra marker is a hard failure.
+#
+#   "newline" (configs/hy_a1_structure_newline.json = phương án B, chosen 04/10/2026)
+#       Pursuant to ...
+#       At the request of ...
+#     Same packing (same caps, same max_nodes), but nodes are joined by '\n' only and s06 maps
+#     output line i -> node i; a different number of non-empty lines is the hard failure
+#     line_count_mismatch. In s08 every failed newline unit (line count or any other hard
+#     failure) is re-sent node by node, since a retry joined by newlines again can be mis-aligned.
+#     Node payloads never contain '\n' (s02 unwraps them), so one node = one line.
+#
+# Public test 50 docs x 2 directions (kaggle/public_test, A1, T4, batch 4): B 68.90 / 46.62 BLEU
+# (en-vi / vi-en) vs A 68.70 / 46.37, and 4.6 h vs 5.5 h per run; one node per request with no
+# grouping (C, configs/hy_a1_structure_nomarker.json) 67.69 / 45.23. See CHANGE_NOTES v1.1.
+#
+# Internally a unit sent with "newline" has Unit.markers == [] even when it holds several nodes;
+# that is how render_payload (here) and parse_output (s06) recognise the newline format, so no
+# other step needs the config.
+
+PAYLOAD_DELIMITERS = ("marker", "newline")
+
+def payload_delimiter(cfg) -> str:
+    """cfg.extra["payload_delimiter"]: "marker" (default; missing key or no extra) or "newline"."""
+    value = (getattr(cfg, "extra", None) or {}).get("payload_delimiter", "marker")
+    if value not in PAYLOAD_DELIMITERS:
+        raise ValueError(f"extra.payload_delimiter must be one of {PAYLOAD_DELIMITERS}, got {value!r}")
+    return value
+
+def use_markers(cfg) -> bool:
+    return payload_delimiter(cfg) == "marker"
+
+def unit_markers(ns: str, indices, cfg) -> list:
+    """Markers of a unit whose nodes have these marker indices: one per node for a multi-node unit
+    in "marker" mode; [] for a single node (always sent bare) and for any unit in "newline" mode."""
+    indices = list(indices)
+    if len(indices) > 1 and use_markers(cfg):
+        return [marker(ns, i) for i in indices]
+    return []
+
 def render_payload(unit_nodes, markers) -> str:
-    """'\\n'.join(f"{m} {n.payload}"); a single node is sent as its bare payload (no marker)."""
+    """Text sent to the model for one unit.
+
+    - one node: its bare payload (never a marker);
+    - several nodes + markers: '\\n'.join(f"{m} {n.payload}") ("marker" mode);
+    - several nodes, markers == []: '\\n'.join(n.payload) ("newline" mode)."""
     nodes = list(unit_nodes)
     if not nodes:
         raise ValueError("render_payload: empty unit")
     if len(nodes) == 1:
         return nodes[0].payload
     markers = list(markers or [])
+    if not markers:
+        return "\n".join(n.payload for n in nodes)
     if len(markers) != len(nodes):
         raise ValueError(f"render_payload: {len(nodes)} nodes but {len(markers)} markers")
     return "\n".join(f"{m} {n.payload}" for m, n in zip(markers, nodes))
@@ -98,7 +149,8 @@ def pack_units(nodes, doc_id, tok, cfg, ns) -> list:
     Signature units: one signature block, <= cfg.signature_cap tokens, <= cfg.max_nodes nodes.
     Units never cross a scope / table group / signature block boundary; copy nodes are not sent
     (a copy table cell or signature line still ends a text run). A node over its cap is packed
-    alone as kind "single". Marker index = position of the node in `nodes`."""
+    alone as kind "single". Marker index = position of the node in `nodes`. Token caps count the
+    rendered payload, so in "newline" mode (no marker tokens) a unit can hold slightly more text."""
     nodes = list(nodes)
     _check_partition(nodes)
     runs = []                                                   # [(kind, [positions])]
@@ -117,7 +169,7 @@ def pack_units(nodes, doc_id, tok, cfg, ns) -> list:
 
     def count(group):
         g_nodes = [nodes[p] for p in group]
-        marks = [marker(ns, p) for p in group] if len(group) > 1 else []
+        marks = unit_markers(ns, group, cfg)
         return tok.count(render_payload(g_nodes, marks))
 
     units = []
@@ -125,7 +177,7 @@ def pack_units(nodes, doc_id, tok, cfg, ns) -> list:
         cap, max_n = _limits(kind, cfg)
         for group, oversize in _greedy(positions, count, cap, max_n):
             g_nodes = [nodes[p] for p in group]
-            marks = [marker(ns, p) for p in group] if len(group) > 1 else []
+            marks = unit_markers(ns, group, cfg)
             payload = render_payload(g_nodes, marks)
             span = "".join(nodes[p].raw for p in range(group[0], group[-1] + 1))
             units.append(Unit(

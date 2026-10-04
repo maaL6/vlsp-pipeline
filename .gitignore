@@ -13,3 +13,6 @@ __pycache__/
 .venv/
 venv/
 .DS_Store
+# kaggle staging / downloaded results
+kaggle/public_test/build/
+kaggle/public_test/results/

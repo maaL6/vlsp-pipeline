@@ -7,13 +7,42 @@ recovery cap, run `20261003c`) thành **một file cho mỗi bước**, để s�
 (lặp / thiếu / EOS sớm) làm ở các bước sau, mỗi sửa một thay đổi, ghi trong `CHANGE_NOTES.md`.
 `report_lam_3_10/` không bị sửa.
 
-## Trạng thái (03/10/2026)
+**Phương án chốt (04/10/2026): B = gom node + không marker** (`configs/hy_a1_structure_newline.json`,
+mặc định của `run.sh`). Các node của một unit được gom như trước (≤8 node / ≤768 token, bảng ≤16 ô)
+nhưng chỉ nối bằng xuống dòng, không chèn `[SEG_…]`; output tách lại theo dòng. So trên full public test
+(50 doc × 2 chiều), xem *Kết quả public test* bên dưới.
+
+## Kết quả public test (04/10/2026)
+
+Full pipeline, A1 merged, HF fp16 greedy, batch 4, Kaggle T4 (mỗi chiều một GPU), chấm
+`benchmark/eval_markdown.py` (SacreBLEU raw, `nrefs:1|case:mixed|eff:no|tok:13a|smooth:exp|version:2.6.0`).
+Mỗi phương án chạy một lần; đủ 50/50 bản dịch mỗi chiều, 0 doc `failed`.
+
+| Phương án | Config | BLEU en-vi | BLEU vi-en | Thời gian (en-vi / vi-en) |
+|---|---|---|---|---|
+| A. Gom node + marker | `hy_a1_structure.json` | 68.70 | 46.37 | 5,5 h / 3,1 h |
+| **B. Gom node + không marker** | `hy_a1_structure_newline.json` | **68.90** | **46.62** | 4,5 h / 2,9 h |
+| C. Không gom node + không marker | `hy_a1_structure_nomarker.json` | 67.69 | 45.23 | 4,3 h / 2,9 h |
+
+- Gom node là yếu tố chính: A/B hơn C khoảng +1,0…+1,4 BLEU (bootstrap 50 doc, khoảng 95% không chứa 0).
+- Bỏ marker không làm kém đi: B − A = +0,20 [+0,05, +0,37] en-vi, +0,25 [−0,05, +0,65] vi-en.
+- B nhanh hơn A ~1 h ở en-vi vì ít phải dịch lại: lượt đầu A mất marker ở 35% unit en-vi, B lệch số
+  dòng ở 21% unit; unit lỗi được dịch lại từng node.
+- v1.2 (sau khi đo): unit gom của B bị lỗi bất kỳ được dịch lại từng node → BLEU giữ nguyên
+  (68.90 / 46.61), số doc còn lỗi cấu trúc giảm 7 → 2 (đo bằng replay output GPU của B và C,
+  `reports/public_test_b_v12_replay_20261004.json`; chưa chạy lại GPU).
+- Chi tiết (điểm từng doc, recovery, token, VRAM): `reports/public_test_abc_20261004.json`. Cách chạy lại:
+  `kaggle/public_test/README.md`. Code B được kiểm bằng replay trace GPU của chính run B: 100/100 bản dịch
+  giống từng byte.
+
+## Trạng thái (04/10/2026)
 
 | Hạng mục | Trạng thái |
 |---|---|
 | Tách module, hành vi giống lam_docmt | completed — replay/mock/test, không GPU (xem *Nghiệm thu*) |
-| `run.sh` / `run-dir` folder → folder | completed với `BACKEND=mock` (kiểm cài đặt); **chưa chạy với model thật** |
-| v1 trên GPU (HF + A1) | **not_started** — code backend HF giống hệt run `20261003b`, nhưng v1 chưa chạy GPU lần nào |
+| `run-dir` folder → folder trên GPU (HF + A1) | completed — full public test 50 doc × 2 chiều, 3 phương án A/B/C trên Kaggle T4 (04/10) |
+| Chọn cách gửi unit | completed — **B (gom node + không marker)**, mặc định của `run.sh` |
+| `run.sh` với model thật | not_checked (kernel Kaggle gọi `python -m docmt run-dir` trực tiếp; `run.sh` mới kiểm với `BACKEND=mock`) |
 | Windows | not_checked (code không phụ thuộc Linux; `run.sh` cần bash → dùng lệnh `python -m docmt run-dir` bên dưới) |
 | Dockerfile | not_started |
 | Sửa lặp / thiếu / EOS sớm | not_started (danh sách trong `CHANGE_NOTES.md`) |
@@ -42,7 +71,7 @@ Chạy thật:
 MODEL=/path/hy_a1_merged ./run.sh INPUT_DIR OUTPUT_DIR en-vi      # Linux / macOS / Git Bash
 # Windows (không có bash), chạy trong thư mục pipeline-v1:
 python -m docmt run-dir --input-dir IN --output-dir OUT --direction en-vi ^
-    --config configs/hy_a1_structure.json --run-id RUN_ID --backend hf ^
+    --config configs/hy_a1_structure_newline.json --run-id RUN_ID --backend hf ^
     --model C:\path\hy_a1_merged --tokenizer C:\path\hy_a1_merged\tokenizer.json
 ```
 
@@ -65,7 +94,7 @@ mặc định đúng, clone chỗ khác thì đặt `VLSP26_ROOT=/path/VLSP26` c
 MODEL=/path/hy_a1_merged ./run.sh INPUT_DIR OUTPUT_DIR en-vi
 
 # Dev / smoke: manifest -> delivery layout (predictions/, logs/, tests/) như lam_docmt run
-python -m docmt run --config configs/hy_a1_structure.json --run-id RUN_ID \
+python -m docmt run --config configs/hy_a1_structure_newline.json --run-id RUN_ID \
     --manifest MANIFEST --data-root ROOT --out delivery/RUN_ID \
     --model A1_MERGED --tokenizer TOKENIZER_JSON [--directions en-vi,vi-en] [--dry-run]
 
@@ -77,8 +106,20 @@ python -m docmt parse-audit       --manifest M --data-root R --tokenizer T --out
 python -m docmt validate-existing --manifest M --data-root R --pred-root PRED --out diag.json
 ```
 
-Backend: `hf` (transformers, GPU CUDA) và `mock` (test). llama.cpp đã bỏ. Preset: `configs/*.json` (một file mỗi nhánh; `hy_a1_structure.json` = config của
-run GPU `hy_a1_structure__kaggleT4__20261003b` trừ run_id/đường dẫn/hash). `--set key=value` ghi đè.
+Backend: `hf` (transformers, GPU CUDA) và `mock` (test). llama.cpp đã bỏ. `--set key=value` ghi đè preset.
+
+Preset `configs/*.json`:
+
+| File | Phương án | Khác `hy_a1_structure.json` |
+|---|---|---|
+| `hy_a1_structure_newline.json` | **B, mặc định `run.sh`** | `extra.payload_delimiter = "newline"` |
+| `hy_a1_structure.json` | A (gom + marker) | — (= config run GPU `20261003b` trừ run_id/đường dẫn/hash; mốc của `tools/verify.sh`) |
+| `hy_a1_structure_nomarker.json` | C (từng node) | `max_nodes = 1`, `max_table_nodes = 1` |
+| `hy_a1_source_context*.json` | nhánh context (*tắt*) | bật source context / glossary / history |
+
+`extra.payload_delimiter` (`"marker"` mặc định | `"newline"`) chỉ đổi cách nối node trong prompt và cách tách
+output; chia đoạn, cap token, kiểm tra, recovery giữ nguyên. Giải thích đầy đủ ở đầu phần
+*payload delimiter* trong `docmt/steps/s03_pack.py`.
 
 ## Các bước và file
 
@@ -89,13 +130,13 @@ Luồng một tài liệu (chỉ đọc nguồn, không bao giờ đọc referen
 | s01 parse | `steps/s01_parse.py`, `steps/s01_parse_lines.py` (luật dòng/nhãn/tên), `steps/s01_parse_audit.py` | raw text → `Node[]` | `"".join(n.raw) == src`; header/bảng/chữ ký/scope |
 | s02 payload | `steps/s02_payload.py` | `content_raw` → `payload` | `normalize(unwrap(raw))` |
 | s03 split | `steps/s03_split.py` | `Node[]` → work nodes (`nX.1`…) | cắt theo câu → phẩy → khoảng trắng, không cắt số |
-| s03 pack | `steps/s03_pack.py` | work nodes → `Unit[]` + marker `[SEG_…]` | text ≤768/8 node, bảng ≤384/16, chữ ký ≤128 |
+| s03 pack | `steps/s03_pack.py` | work nodes → `Unit[]` (B: nối `\n`; A: marker `[SEG_…]`) | text ≤768/8 node, bảng ≤384/16, chữ ký ≤128 |
 | s04 prompt | `steps/s04_prompt.py` | unit (+evidence) → prompt | `HY_DEFAULT` / `HY_TERMS` / `HY_BACKGROUND` |
 | s05 budget | `steps/s05_budget.py` | prompt → `max_new_tokens`, bỏ evidence nếu thiếu chỗ | `min(4096−prompt−32, max(256, ⌈2.5·src⌉+128))` |
 | (generate) | `backends/hf.py`, `backends/mock.py`, `backends/replay.py` | `GenRequest[]` → `GenResult[]` | greedy, fp16, rep 1.05 |
-| s06 parse output | `steps/s06_parse_output.py` | output → segment theo node | lỗi marker, rò marker nội bộ |
+| s06 parse output | `steps/s06_parse_output.py` | output → segment theo node | B: dòng i → node i, lệch số dòng = `line_count_mismatch`; A: lỗi marker, rò marker |
 | s07 validate | `steps/s07_validate_unit.py` + `checks/{numbers,headings,loops,lexical}.py` | segment → hard / warnings | **hard** kích hoạt recovery; warning chỉ ghi |
-| s08 recovery | `steps/s08_recovery.py` | unit lỗi → unit con | marker lỗi → từng node; khác → gom ≤256 token; 1 vòng |
+| s08 recovery | `steps/s08_recovery.py` | unit lỗi → unit con | B: mọi lỗi → từng node; A: marker lỗi → từng node, khác → gom ≤256 token; 1 vòng |
 | s09 select | `steps/s09_select.py` | lượt đầu vs recovery → text cuối mỗi node | ít hard hơn thắng; hoà giữ lượt đầu |
 | s10 assemble | `steps/s10_assemble.py` | text node → Markdown | `lead + bản dịch + trail`, giữ layout |
 | s10 doc check | `steps/s10_doc_check.py` | tài liệu → status | coverage, heading, số, lặp, U+FFFD |
@@ -130,7 +171,9 @@ Thay một bước bằng bản thử nghiệm mà không sửa file gốc: `run
 
 Kết quả hiện tại (03/10/2026, không GPU):
 
-- `pytest`: **55/55** (50 test port từ lam_docmt + 5 test v1).
+- `pytest`: **61/61** (50 test port từ lam_docmt + 5 test v1 + 6 test phương án B, 04/10).
+- Replay/mock bên dưới chạy với config A (`hy_a1_structure.json`): chứng minh thêm phương án B không đổi
+  hành vi của A. Hành vi của B được kiểm riêng bằng replay trace Kaggle của run B (100/100 giống từng byte).
 - Replay trace GPU run `20261003b` (smoke6), lam_docmt vs v1: prediction **6/6**, document_status **6/6**,
   trace **1111/1111**, prompt **972/972** giống từng byte → `reports/replay_equivalence.json`.
   2 request không có trong trace (`111:u0334.r4/.r5`) = 2 mảnh mới của bản sửa recovery cap (369 → 233+136);
@@ -146,7 +189,7 @@ hành vi thì replay sẽ báo khác: đó là bằng chứng cần ghi vào `CH
 ## Cấu trúc thư mục và vai trò
 
 Ký hiệu cột **Chạy dịch**: **cần** = thiếu thì `run.sh` không chạy; *dev* = chỉ để phát triển/kiểm tra;
-*tắt* = có code nhưng không dùng ở nhánh chính `hy_a1_structure`.
+*tắt* = có code nhưng không dùng ở nhánh chính (B, `hy_a1_structure_newline.json`).
 
 ```
 pipeline-v1/
@@ -160,12 +203,13 @@ pipeline-v1/
 |---|---|---|
 | `run.sh` | Lệnh cuối: folder `.md` → folder `.md` (gọi `python -m docmt run-dir`) | **cần** |
 | `requirements.txt` | Dependency (torch CUDA cài riêng) | **cần** |
-| `configs/` | Preset JSON mỗi nhánh. `hy_a1_structure.json` là nhánh chính, `run.sh` đọc mặc định; 3 file `hy_a1_source_context*.json` cho nhánh context | **cần** (`hy_a1_structure.json`); 3 preset context *tắt* |
+| `configs/` | Preset JSON mỗi nhánh (bảng ở *Chạy (chi tiết)*). `hy_a1_structure_newline.json` (B) là nhánh chính, `run.sh` đọc mặc định | **cần** (`hy_a1_structure_newline.json`); A, C để so sánh/nghiệm thu; 3 preset context *tắt* |
 | `docmt/` | Toàn bộ code pipeline (bảng bên dưới) | **cần** |
-| `tests/` | 55 test pytest; cần `task 3-10/CHUNG/inputs` (hoặc `DOCMT_TEST_INPUTS`) | *dev* |
+| `tests/` | 61 test pytest; cần `task 3-10/CHUNG/inputs` (hoặc `DOCMT_TEST_INPUTS`) | *dev* |
 | `tools/` | Nghiệm thu và audit (bảng bên dưới) | *dev* |
 | `train/` | `build_hy_derivative.py`, `audit_hy_derivative.py`: tạo/kiểm dữ liệu context-SFT; đọc `report_lam_3_10/.../token_audit.py`, ghi vào `train/data/` (bị ignore) | *dev* (train, không phải inference) |
-| `reports/` | Bằng chứng nghiệm thu dạng JSON (replay, mock, parse-audit 84, recovery cap); `tools/verify.sh` tạo lại được; có đường dẫn máy local | không |
+| `reports/` | Bằng chứng nghiệm thu dạng JSON (replay, mock, parse-audit 84, recovery cap; `tools/verify.sh` tạo lại được) và `public_test_abc_20261004.json` (kết quả A/B/C); có đường dẫn máy local | không |
+| `kaggle/public_test/` | Chạy full public test trên Kaggle (`push.sh`), tải kết quả và chấm (`fetch_and_compare.sh`); xem README trong thư mục | *dev* (benchmark) |
 | `README.md`, `CHANGE_NOTES.md` | Hướng dẫn; lịch sử thay đổi hành vi và danh sách lỗi đang chờ sửa | không |
 | `.gitignore` | Chặn `models/`, `*.safetensors`, `*.work/`, `delivery/`, `train/data/`, cache Python | không |
 
