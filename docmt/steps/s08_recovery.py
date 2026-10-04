@@ -3,11 +3,14 @@ from __future__ import annotations
 
 from ..core.codes import _code
 from ..core.datatypes import Unit
-from .s03_pack import _greedy, _sha, marker, render_payload
+from .s03_pack import _greedy, _sha, render_payload, unit_markers
 from .s03_split import split_node
 
+# Hard failures meaning "the output could not be mapped back to the unit's nodes". They send a
+# multi-node unit to independent recovery (each node alone). line_count_mismatch is the
+# "newline"-mode counterpart of the marker failures (see s03_pack, payload delimiter).
 MARKER_CODES = ("marker_missing", "marker_duplicate", "marker_order", "marker_unexpected",
-                "unassigned_text", "segment_empty", "internal_marker_leak")
+                "unassigned_text", "segment_empty", "internal_marker_leak", "line_count_mismatch")
 
 def is_marker_failure(hard) -> bool:
     return any(_code(h) in MARKER_CODES for h in hard)
@@ -42,9 +45,11 @@ def _halves(items, count):
 def recovery_units(unit, nodes_by_id, tok, cfg, ns, independent: bool) -> list:
     """Units for the single quality-recovery round of `unit` (re-translation from source).
 
-    independent=True (marker failure): single-node pieces <= recovery_cap, kind "single", no markers.
+    independent=True (marker / line-count failure): single-node pieces <= recovery_cap, kind
+    "single", no markers.
     independent=False: nodes > cfg.recovery_cap tokens are split first (pieces added to
-    nodes_by_id), then regrouped in order into units <= cfg.recovery_cap tokens (markers included),
+    nodes_by_id), then regrouped in order into units <= cfg.recovery_cap tokens (markers included;
+    in "newline" mode the regrouped units are newline-joined like the first pass),
     kind "recovery"; if that would rebuild the same multi-node unit, it is cut in two halves so the
     retry is not an identical request. Ids '<unit_id>.r1', '.r2' ...; split_from = unit.unit_id.
     Marker index = position of the node in nodes_by_id (insertion order)."""
@@ -67,7 +72,7 @@ def recovery_units(unit, nodes_by_id, tok, cfg, ns, independent: bool) -> list:
         position = {nid: i for i, nid in enumerate(nodes_by_id)}
 
         def count(group):
-            marks = [marker(ns, position[x.node_id]) for x in group] if len(group) > 1 else []
+            marks = unit_markers(ns, [position[x.node_id] for x in group], cfg)
             return tok.count(render_payload(group, marks))
 
         max_n = cfg.max_table_nodes if unit.kind == "table" else cfg.max_nodes
@@ -78,7 +83,9 @@ def recovery_units(unit, nodes_by_id, tok, cfg, ns, independent: bool) -> list:
 
     out = []
     for j, g in enumerate(groups, 1):
-        marks = [marker(ns, position[x.node_id]) for x in g] if len(g) > 1 else []
+        # position is empty for independent (single-node) groups; unit_markers never reads the
+        # index of a single node, so .get() is safe there and a multi-node group still needs it
+        marks = unit_markers(ns, [position.get(x.node_id) for x in g], cfg)
         payload = render_payload(g, marks)
         span = _span_text(nodes_by_id, g[0].raw_start, g[-1].raw_end)
         out.append(Unit(

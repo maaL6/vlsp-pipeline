@@ -15,6 +15,9 @@ def _near_miss_re(ns: str):
 def parse_output(unit: Unit, text: str) -> ParseResult:
     """Split a model output into node segments using the unit's markers.
 
+    Single node: the whole output. Several nodes and unit.markers == []: "newline" mode, see
+    _parse_lines. Several nodes with markers: the rules below.
+
     Hard failures: empty_output, marker_missing:<id>, marker_duplicate:<id>, marker_order,
     marker_unexpected:<m>, unassigned_text, segment_empty:<id>. Segments are stripped; only
     non-empty segments are returned. Markers of another namespace stay in the text. For
@@ -29,6 +32,8 @@ def parse_output(unit: Unit, text: str) -> ParseResult:
         if not seg:
             return ParseResult({}, ["empty_output"], {"mode": "single"})
         return ParseResult({nids[0]: seg}, [], {"mode": "single"})
+    if not unit.markers:                    # multi-node unit without markers = "newline" mode
+        return _parse_lines(nids, text)
     if len(unit.markers) != len(nids):
         raise ValueError(f"parse_output: unit {unit.unit_id} has {len(nids)} nodes, "
                          f"{len(unit.markers)} markers")
@@ -97,6 +102,26 @@ def parse_output(unit: Unit, text: str) -> ParseResult:
         hard.append(f"marker_unexpected:{m}")
     extra["unexpected"] = list(dict.fromkeys(unexpected))
     return ParseResult(segments, hard, extra)
+
+def _parse_lines(nids, text: str) -> ParseResult:
+    """Output of a multi-node unit sent without markers (payload_delimiter "newline", s03_pack).
+
+    The payload had one node per line, so the output must have exactly one non-empty line per
+    node, in order: line i -> nids[i] (stripped). Blank lines are ignored (the model sometimes
+    adds an empty line between paragraphs). Any other count of non-empty lines -- the model merged
+    two nodes into one line, split one node over two lines, or dropped/added a line -- cannot be
+    mapped safely, so nothing is assigned and the hard failure is
+    line_count_mismatch:<got>/<want>; s08 then re-translates each node of the unit alone, as for
+    a marker failure. Measured on the public test: 21% of first-pass units (A: 12-35% marker
+    failures). Content checks (numbers, headings, loops ...) run afterwards in s07 as usual."""
+    extra = {"mode": "lines", "found": 0}
+    if not text.strip():
+        return ParseResult({}, ["empty_output"], extra)
+    lines = [ln.strip() for ln in text.split("\n") if ln.strip()]
+    extra["found"] = len(lines)
+    if len(lines) != len(nids):
+        return ParseResult({}, [f"line_count_mismatch:{len(lines)}/{len(nids)}"], extra)
+    return ParseResult(dict(zip(nids, lines)), [], extra)
 
 def merge_child_segments(parent: Unit, children, child_segments: dict) -> dict:
     """Map recovery-children segments back to the parent's node ids. A parent node gets its own

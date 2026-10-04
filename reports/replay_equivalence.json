@@ -76,7 +76,7 @@
         },
         "unresolved_units": 0,
         "op_error_count": 0,
-        "runtime": 5.858
+        "runtime": 8.622
       },
       "vi-en": {
         "documents": 1,
@@ -87,7 +87,7 @@
         },
         "unresolved_units": 0,
         "op_error_count": 0,
-        "runtime": 0.781
+        "runtime": 1.225
       }
     },
     "v1": {
@@ -100,7 +100,7 @@
         },
         "unresolved_units": 0,
         "op_error_count": 0,
-        "runtime": 5.681
+        "runtime": 8.876
       },
       "vi-en": {
         "documents": 1,
@@ -111,7 +111,7 @@
         },
         "unresolved_units": 0,
         "op_error_count": 0,
-        "runtime": 0.751
+        "runtime": 1.13
       }
     }
   },
