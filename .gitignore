@@ -1,5 +1,6 @@
 # model weights and run outputs never go into git
 models/
+hy-mt2-1.8b-trained/
 *.safetensors
 *.gguf
 *.work/
