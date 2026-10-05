@@ -51,6 +51,8 @@ class HFBackend(Backend):
         self.pad_id = None
         self.versions: dict = {}
         self.gpu_name = None
+        self.batch_metrics = {"groups": 0, "requests": 0, "prompt_tokens": 0,
+                              "padded_prompt_tokens": 0, "decode_tensor_tokens": 0}
 
     # -- loading -----------------------------------------------------------------------------
     def prepare(self):
@@ -164,6 +166,11 @@ class HFBackend(Backend):
                                      stop_type="eos" if eos else "limit", input_tokens=n_in,
                                      output_tokens=len(ids) + (1 if eos else 0),
                                      seconds=round(secs, 3), backend=self.name))
+        self.batch_metrics["groups"] += 1
+        self.batch_metrics["requests"] += len(group)
+        self.batch_metrics["prompt_tokens"] += sum(r.input_tokens for r in results)
+        self.batch_metrics["padded_prompt_tokens"] += plen * len(group)
+        self.batch_metrics["decode_tensor_tokens"] += int(out.shape[1] - plen) * len(group)
         return results
 
     # -- info ----------------------------------------------------------------------------------
@@ -193,4 +200,5 @@ class HFBackend(Backend):
             "max_batch_now": self.max_batch,
             "eos_ids": sorted(self.eos_ids),
             "decode": self.decode_config(),
+            "batch_metrics": dict(self.batch_metrics),
         }

@@ -37,8 +37,9 @@ def _parallel(gens):
 class _Runner:
     """Drives one document generator (yield list[GenRequest] -> receive list[GenResult])."""
 
-    def __init__(self, job: _DocJob, limit: Optional[int]):
+    def __init__(self, job: _DocJob, limit: Optional[int], order_key=None):
         self.job, self.limit = job, limit
+        self.order_key = order_key
         self.gen = job.flow()
         self.waiting = deque()
         self.expected: list = []
@@ -63,7 +64,7 @@ class _Runner:
             if reqs:
                 self.expected = [r.request_id for r in reqs]
                 self.got = {}
-                self.waiting = deque(reqs)
+                self.waiting = deque(sorted(reqs, key=self.order_key) if self.order_key else reqs)
                 return
             value = []
 

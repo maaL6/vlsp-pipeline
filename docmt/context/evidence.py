@@ -94,7 +94,7 @@ def _fit(cands, tok, cap, title_cap):
         it.tokens = tok.count(it.text)
     return kept, dropped
 
-def select_evidence_detailed(unit, nodes_by_id, index, memory, glossary, tok, cfg, doc_id) -> tuple:
+def select_evidence_detailed(unit, nodes_by_id, index, memory, glossary, tok, cfg, doc_id, src_lang=None) -> tuple:
     """(kept, dropped, info). kept is what select_evidence returns; dropped/info are for traces."""
     unit_nodes, text, starts, spans = _unit_view(unit, nodes_by_id)
     scope = unit.scope_id or (unit_nodes[0].scope_id if unit_nodes else "main")
@@ -111,7 +111,7 @@ def select_evidence_detailed(unit, nodes_by_id, index, memory, glossary, tok, cf
         cands += index.reference_items(text, starts, unit_nodes, scope, spans,
                                        _opt(cfg, "context_max_references"))
     if getattr(cfg, "soft_glossary", False) and glossary is not None:
-        lang = index.src_lang if index is not None else guess_lang(text)
+        lang = src_lang or (index.src_lang if index is not None else guess_lang(text))
         for s, tg, e in glossary.match_entries(text, lang, getattr(cfg, "soft_terms", 8)):
             cands.append(EvidenceItem("glossary", "train_glossary", f"{s} translates to {tg}", 0,
                                       ref={"src": s, "tgt": tg, "domain": e.get("domain"),
@@ -140,9 +140,9 @@ def select_evidence_detailed(unit, nodes_by_id, index, memory, glossary, tok, cf
             "evidence_cap": cap}
     return kept, dropped, info
 
-def select_evidence(unit, nodes_by_id, index, memory, glossary, tok, cfg, doc_id) -> list:
+def select_evidence(unit, nodes_by_id, index, memory, glossary, tok, cfg, doc_id, src_lang=None) -> list:
     """Evidence items for one unit, in priority order, rendered background <= cfg.evidence_cap."""
-    return select_evidence_detailed(unit, nodes_by_id, index, memory, glossary, tok, cfg, doc_id)[0]
+    return select_evidence_detailed(unit, nodes_by_id, index, memory, glossary, tok, cfg, doc_id, src_lang)[0]
 
 _HEADERS = {
     "definition": "Definitions given in this document:",

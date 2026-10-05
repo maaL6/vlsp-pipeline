@@ -1,0 +1,2 @@
+# Preserve downloaded benchmark evidence byte-for-byte on all platforms.
+results/v13_kaggle_20261004/** -text

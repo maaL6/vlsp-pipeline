@@ -1,0 +1,761 @@
+{
+  "bootstrap": {
+    "resamples": 2000,
+    "seed": 42,
+    "unit": "paired document",
+    "metric": "raw corpus BLEU delta",
+    "interval": "percentile 95%; conditional on this test set"
+  },
+  "directions": {
+    "en-vi": {
+      "corpus_bleu": {
+        "baseline": 68.90021883905432,
+        "batch_length": 68.88834579369521,
+        "glossary": 68.96929435876656
+      },
+      "variants": {
+        "baseline": {
+          "documents": 50,
+          "statuses": {
+            "completed": 44,
+            "completed_with_unresolved": 6
+          },
+          "warning_documents": {
+            "loop_not_in_source": 9,
+            "number_diff": 42,
+            "number_diff_big": 19,
+            "unresolved_units": 6,
+            "heading_order": 2,
+            "heading_not_as_heading": 1,
+            "heading_duplicate:article:28": 1,
+            "heading_missing:article:27": 1
+          },
+          "hard_failure_documents": 0,
+          "unresolved": [
+            {
+              "sample_id": "So_huu_tri_tue/118",
+              "units": [
+                {
+                  "unit_id": "So_huu_tri_tue/118:u0014",
+                  "hard": [
+                    "protected_heading_lost:n00107"
+                  ],
+                  "chosen": "first"
+                }
+              ],
+              "hard": [
+                "protected_heading_lost:n00107"
+              ]
+            },
+            {
+              "sample_id": "So_huu_tri_tue/7",
+              "units": [
+                {
+                  "unit_id": "So_huu_tri_tue/7:u0178",
+                  "hard": [
+                    "protected_heading_lost:n01419"
+                  ],
+                  "chosen": "first"
+                }
+              ],
+              "hard": [
+                "protected_heading_lost:n01419"
+              ]
+            },
+            {
+              "sample_id": "Thu_tuc_to_tung/164",
+              "units": [
+                {
+                  "unit_id": "Thu_tuc_to_tung/164:u0053",
+                  "hard": [
+                    "protected_heading_lost:n00377"
+                  ],
+                  "chosen": "first"
+                }
+              ],
+              "hard": [
+                "protected_heading_lost:n00377"
+              ]
+            },
+            {
+              "sample_id": "Trach_nhiem_hinh_su/53",
+              "units": [
+                {
+                  "unit_id": "Trach_nhiem_hinh_su/53:u0023",
+                  "hard": [
+                    "protected_heading_lost:n00170"
+                  ],
+                  "chosen": "first"
+                },
+                {
+                  "unit_id": "Trach_nhiem_hinh_su/53:u0051",
+                  "hard": [
+                    "line_count_mismatch:5/6"
+                  ],
+                  "chosen": "recovery"
+                }
+              ],
+              "hard": [
+                "protected_heading_lost:n00170",
+                "line_count_mismatch:5/6"
+              ]
+            },
+            {
+              "sample_id": "Vi_pham_hanh_chinh/20",
+              "units": [
+                {
+                  "unit_id": "Vi_pham_hanh_chinh/20:u0152",
+                  "hard": [
+                    "line_count_mismatch:4/5"
+                  ],
+                  "chosen": "first"
+                }
+              ],
+              "hard": [
+                "line_count_mismatch:4/5"
+              ]
+            },
+            {
+              "sample_id": "Vi_pham_hanh_chinh/289",
+              "units": [
+                {
+                  "unit_id": "Vi_pham_hanh_chinh/289:u0033",
+                  "hard": [
+                    "protected_heading_lost:n00262"
+                  ],
+                  "chosen": "first"
+                }
+              ],
+              "hard": [
+                "protected_heading_lost:n00262"
+              ]
+            }
+          ],
+          "roundtrip_failures": 0,
+          "short_documents_under_70pct": [
+            {
+              "sample_id": "Quyen_dan_su/390",
+              "ratio": 0.6349734042553191
+            }
+          ],
+          "identical_to_baseline": 50
+        },
+        "batch_length": {
+          "documents": 50,
+          "statuses": {
+            "completed": 48,
+            "completed_with_unresolved": 2
+          },
+          "warning_documents": {
+            "number_diff_big": 19,
+            "number_diff": 41,
+            "loop_not_in_source": 9,
+            "unresolved_units": 2,
+            "heading_not_as_heading": 1,
+            "heading_order": 1
+          },
+          "hard_failure_documents": 0,
+          "unresolved": [
+            {
+              "sample_id": "So_huu_tri_tue/118",
+              "units": [
+                {
+                  "unit_id": "So_huu_tri_tue/118:u0014",
+                  "hard": [
+                    "protected_heading_lost:n00107"
+                  ],
+                  "chosen": "first"
+                }
+              ],
+              "hard": [
+                "protected_heading_lost:n00107"
+              ]
+            },
+            {
+              "sample_id": "Vi_pham_hanh_chinh/20",
+              "units": [
+                {
+                  "unit_id": "Vi_pham_hanh_chinh/20:u0152",
+                  "hard": [
+                    "line_count_mismatch:4/5"
+                  ],
+                  "chosen": "first"
+                }
+              ],
+              "hard": [
+                "line_count_mismatch:4/5"
+              ]
+            }
+          ],
+          "roundtrip_failures": 0,
+          "short_documents_under_70pct": [
+            {
+              "sample_id": "Quyen_dan_su/390",
+              "ratio": 0.6353058510638298
+            }
+          ],
+          "identical_to_baseline": 8,
+          "bootstrap_bleu_delta_95ci": [
+            -0.03001111408772026,
+            0.008631701230499186
+          ],
+          "docs_improved": 14,
+          "docs_worse": 24,
+          "docs_equal_within_005": 12,
+          "mean_document_bleu_delta": 0.00042375806650019054,
+          "largest_improvements": [
+            {
+              "sample_id": "Vi_pham_hanh_chinh/315",
+              "baseline": 83.53768009224528,
+              "new": 84.24790027331208,
+              "delta": 0.7102201810668021
+            },
+            {
+              "sample_id": "Bat_dong_san/93",
+              "baseline": 54.668357767351594,
+              "new": 54.805455207348864,
+              "delta": 0.13709743999726953
+            },
+            {
+              "sample_id": "Vi_pham_hanh_chinh/285",
+              "baseline": 77.51182584033882,
+              "new": 77.62547987575823,
+              "delta": 0.11365403541941532
+            },
+            {
+              "sample_id": "Thu_tuc_to_tung/46",
+              "baseline": 61.598428809811224,
+              "new": 61.699480553598484,
+              "delta": 0.10105174378725934
+            },
+            {
+              "sample_id": "Quyen_dan_su/164",
+              "baseline": 65.6990466056725,
+              "new": 65.79395849486873,
+              "delta": 0.09491188919622573
+            }
+          ],
+          "largest_regressions": [
+            {
+              "sample_id": "Trach_nhiem_hinh_su/53",
+              "baseline": 72.28064616530256,
+              "new": 72.11214123595843,
+              "delta": -0.16850492934412387
+            },
+            {
+              "sample_id": "Bat_dong_san/137",
+              "baseline": 59.44932686120631,
+              "new": 59.31462934980364,
+              "delta": -0.1346975114026705
+            },
+            {
+              "sample_id": "Trach_nhiem_hinh_su/55",
+              "baseline": 59.72467684620406,
+              "new": 59.592451547929414,
+              "delta": -0.13222529827464768
+            },
+            {
+              "sample_id": "Vi_pham_hanh_chinh/37",
+              "baseline": 84.06906453805901,
+              "new": 83.93934696631595,
+              "delta": -0.12971757174305765
+            },
+            {
+              "sample_id": "Trach_nhiem_hinh_su/140",
+              "baseline": 47.290068390516986,
+              "new": 47.17474796196461,
+              "delta": -0.11532042855237279
+            }
+          ]
+        },
+        "glossary": {
+          "documents": 50,
+          "statuses": {
+            "completed": 47,
+            "completed_with_unresolved": 3
+          },
+          "warning_documents": {
+            "loop_not_in_source": 10,
+            "number_diff": 41,
+            "number_diff_big": 19,
+            "heading_not_as_heading": 2,
+            "heading_order": 2,
+            "unresolved_units": 3
+          },
+          "hard_failure_documents": 0,
+          "unresolved": [
+            {
+              "sample_id": "So_huu_tri_tue/118",
+              "units": [
+                {
+                  "unit_id": "So_huu_tri_tue/118:u0014",
+                  "hard": [
+                    "protected_heading_lost:n00107"
+                  ],
+                  "chosen": "first"
+                }
+              ],
+              "hard": [
+                "protected_heading_lost:n00107"
+              ]
+            },
+            {
+              "sample_id": "Thu_tuc_to_tung/111",
+              "units": [
+                {
+                  "unit_id": "Thu_tuc_to_tung/111:u0060",
+                  "hard": [
+                    "line_count_mismatch:11/8"
+                  ],
+                  "chosen": "first"
+                }
+              ],
+              "hard": [
+                "line_count_mismatch:11/8"
+              ]
+            },
+            {
+              "sample_id": "Vi_pham_hanh_chinh/20",
+              "units": [
+                {
+                  "unit_id": "Vi_pham_hanh_chinh/20:u0152",
+                  "hard": [
+                    "line_count_mismatch:4/5"
+                  ],
+                  "chosen": "first"
+                }
+              ],
+              "hard": [
+                "line_count_mismatch:4/5"
+              ]
+            }
+          ],
+          "roundtrip_failures": 0,
+          "short_documents_under_70pct": [
+            {
+              "sample_id": "Quyen_dan_su/390",
+              "ratio": 0.6353058510638298
+            }
+          ],
+          "identical_to_baseline": 1,
+          "bootstrap_bleu_delta_95ci": [
+            -0.007437262084075868,
+            0.15968018662032535
+          ],
+          "docs_improved": 30,
+          "docs_worse": 19,
+          "docs_equal_within_005": 1,
+          "mean_document_bleu_delta": 0.09886991225158047,
+          "largest_improvements": [
+            {
+              "sample_id": "Trach_nhiem_hinh_su/140",
+              "baseline": 47.290068390516986,
+              "new": 48.19529033429467,
+              "delta": 0.9052219437776827
+            },
+            {
+              "sample_id": "Vi_pham_hanh_chinh/315",
+              "baseline": 83.53768009224528,
+              "new": 84.24790027331208,
+              "delta": 0.7102201810668021
+            },
+            {
+              "sample_id": "Vi_pham_hanh_chinh/155",
+              "baseline": 73.63882072400878,
+              "new": 74.29900708769254,
+              "delta": 0.6601863636837635
+            },
+            {
+              "sample_id": "Vi_pham_hanh_chinh/37",
+              "baseline": 84.06906453805901,
+              "new": 84.64079081401303,
+              "delta": 0.5717262759540205
+            },
+            {
+              "sample_id": "Quyen_dan_su/164",
+              "baseline": 65.6990466056725,
+              "new": 66.26574086291727,
+              "delta": 0.5666942572447624
+            }
+          ],
+          "largest_regressions": [
+            {
+              "sample_id": "Quyen_dan_su/462",
+              "baseline": 46.739544050042525,
+              "new": 45.8552990373184,
+              "delta": -0.8842450127241221
+            },
+            {
+              "sample_id": "Quyen_dan_su/139",
+              "baseline": 56.161563020642284,
+              "new": 55.41717213151076,
+              "delta": -0.7443908891315232
+            },
+            {
+              "sample_id": "Quyen_dan_su/364",
+              "baseline": 62.05519507697332,
+              "new": 61.40467716958705,
+              "delta": -0.6505179073862664
+            },
+            {
+              "sample_id": "Vi_pham_hanh_chinh/502",
+              "baseline": 61.91600866027762,
+              "new": 61.40678747540181,
+              "delta": -0.5092211848758055
+            },
+            {
+              "sample_id": "Thu_tuc_to_tung/164",
+              "baseline": 79.71297464685134,
+              "new": 79.39553523053387,
+              "delta": -0.31743941631746964
+            }
+          ]
+        }
+      },
+      "categories": {
+        "Bat_dong_san": {
+          "documents": 5,
+          "corpus_bleu": {
+            "baseline": 58.3614741839607,
+            "batch_length": 58.374729741176616,
+            "glossary": 58.51815894072851
+          }
+        },
+        "Dich_vu_phap_ly": {
+          "documents": 5,
+          "corpus_bleu": {
+            "baseline": 71.09441914089439,
+            "batch_length": 71.06818004043019,
+            "glossary": 71.24966173548248
+          }
+        },
+        "Quyen_dan_su": {
+          "documents": 12,
+          "corpus_bleu": {
+            "baseline": 49.450669079198605,
+            "batch_length": 49.423371267484406,
+            "glossary": 49.23606174189047
+          }
+        },
+        "So_huu_tri_tue": {
+          "documents": 5,
+          "corpus_bleu": {
+            "baseline": 70.07575058465966,
+            "batch_length": 70.05969609511956,
+            "glossary": 70.1329729604836
+          }
+        },
+        "Thu_tuc_to_tung": {
+          "documents": 4,
+          "corpus_bleu": {
+            "baseline": 70.8652713808386,
+            "batch_length": 70.8543372997635,
+            "glossary": 70.86189418432119
+          }
+        },
+        "Trach_nhiem_hinh_su": {
+          "documents": 7,
+          "corpus_bleu": {
+            "baseline": 75.93132486634563,
+            "batch_length": 75.90546777340062,
+            "glossary": 76.26263677421244
+          }
+        },
+        "Vi_pham_hanh_chinh": {
+          "documents": 12,
+          "corpus_bleu": {
+            "baseline": 70.12147167390042,
+            "batch_length": 70.12167044474391,
+            "glossary": 70.19128038140636
+          }
+        }
+      }
+    },
+    "vi-en": {
+      "corpus_bleu": {
+        "baseline": 46.61833619134713,
+        "batch_length": 46.64852765257524,
+        "glossary": 46.264441350517565
+      },
+      "variants": {
+        "baseline": {
+          "documents": 50,
+          "statuses": {
+            "completed": 49,
+            "completed_with_unresolved": 1
+          },
+          "warning_documents": {
+            "loop_not_in_source": 7,
+            "number_diff": 36,
+            "number_diff_big": 4,
+            "heading_order": 3,
+            "heading_extra:chapter:4": 1,
+            "unresolved_units": 1,
+            "heading_not_as_heading": 1
+          },
+          "hard_failure_documents": 0,
+          "unresolved": [
+            {
+              "sample_id": "So_huu_tri_tue/7",
+              "units": [
+                {
+                  "unit_id": "So_huu_tri_tue/7:u0182",
+                  "hard": [
+                    "protected_heading_lost:n01308"
+                  ],
+                  "chosen": "first"
+                }
+              ],
+              "hard": [
+                "protected_heading_lost:n01308"
+              ]
+            }
+          ],
+          "roundtrip_failures": 0,
+          "short_documents_under_70pct": [],
+          "identical_to_baseline": 50
+        },
+        "batch_length": {
+          "documents": 50,
+          "statuses": {
+            "completed": 50
+          },
+          "warning_documents": {
+            "number_diff": 36,
+            "number_diff_big": 4,
+            "heading_order": 3,
+            "loop_not_in_source": 7,
+            "heading_not_as_heading": 1,
+            "heading_extra:chapter:4": 1
+          },
+          "hard_failure_documents": 0,
+          "unresolved": [],
+          "roundtrip_failures": 0,
+          "short_documents_under_70pct": [],
+          "identical_to_baseline": 11,
+          "bootstrap_bleu_delta_95ci": [
+            -0.02196632070982698,
+            0.12312388074411124
+          ],
+          "docs_improved": 16,
+          "docs_worse": 19,
+          "docs_equal_within_005": 15,
+          "mean_document_bleu_delta": -0.0015486401545310713,
+          "largest_improvements": [
+            {
+              "sample_id": "Quyen_dan_su/390",
+              "baseline": 8.08351214330836,
+              "new": 8.416655955600897,
+              "delta": 0.333143812292537
+            },
+            {
+              "sample_id": "Thu_tuc_to_tung/164",
+              "baseline": 36.894654368263716,
+              "new": 37.152969140985945,
+              "delta": 0.2583147727222297
+            },
+            {
+              "sample_id": "Quyen_dan_su/164",
+              "baseline": 44.00067537541349,
+              "new": 44.20133956128866,
+              "delta": 0.2006641858751692
+            },
+            {
+              "sample_id": "So_huu_tri_tue/71",
+              "baseline": 41.06948155718523,
+              "new": 41.198776794049316,
+              "delta": 0.12929523686408828
+            },
+            {
+              "sample_id": "Dich_vu_phap_ly/1",
+              "baseline": 51.00864301519506,
+              "new": 51.129309687456704,
+              "delta": 0.12066667226164185
+            }
+          ],
+          "largest_regressions": [
+            {
+              "sample_id": "Dich_vu_phap_ly/43",
+              "baseline": 36.25694475868195,
+              "new": 35.87053861268131,
+              "delta": -0.3864061460006454
+            },
+            {
+              "sample_id": "Vi_pham_hanh_chinh/37",
+              "baseline": 50.287326331970554,
+              "new": 50.114557622763506,
+              "delta": -0.17276870920704823
+            },
+            {
+              "sample_id": "Quyen_dan_su/313",
+              "baseline": 39.77805916302613,
+              "new": 39.608478981018266,
+              "delta": -0.16958018200786285
+            },
+            {
+              "sample_id": "Bat_dong_san/93",
+              "baseline": 36.44956096673737,
+              "new": 36.29885880673688,
+              "delta": -0.15070216000049186
+            },
+            {
+              "sample_id": "Trach_nhiem_hinh_su/55",
+              "baseline": 38.175545917237336,
+              "new": 38.04297302807262,
+              "delta": -0.1325728891647131
+            }
+          ]
+        },
+        "glossary": {
+          "documents": 50,
+          "statuses": {
+            "completed": 50
+          },
+          "warning_documents": {
+            "loop_not_in_source": 5,
+            "number_diff": 38,
+            "number_diff_big": 6,
+            "heading_order": 4,
+            "heading_not_as_heading": 2,
+            "heading_extra:chapter:4": 1
+          },
+          "hard_failure_documents": 0,
+          "unresolved": [],
+          "roundtrip_failures": 0,
+          "short_documents_under_70pct": [],
+          "identical_to_baseline": 0,
+          "bootstrap_bleu_delta_95ci": [
+            -0.6512457299075173,
+            -0.10973279457525195
+          ],
+          "docs_improved": 18,
+          "docs_worse": 32,
+          "docs_equal_within_005": 0,
+          "mean_document_bleu_delta": -0.39334370168543065,
+          "largest_improvements": [
+            {
+              "sample_id": "Thu_tuc_to_tung/164",
+              "baseline": 36.894654368263716,
+              "new": 39.00168101788767,
+              "delta": 2.107026649623954
+            },
+            {
+              "sample_id": "Vi_pham_hanh_chinh/315",
+              "baseline": 66.58947613239907,
+              "new": 68.20756923152358,
+              "delta": 1.6180930991245077
+            },
+            {
+              "sample_id": "Quyen_dan_su/313",
+              "baseline": 39.77805916302613,
+              "new": 41.370999988105446,
+              "delta": 1.5929408250793173
+            },
+            {
+              "sample_id": "Vi_pham_hanh_chinh/289",
+              "baseline": 35.37193025572416,
+              "new": 36.55063103303316,
+              "delta": 1.178700777309004
+            },
+            {
+              "sample_id": "Vi_pham_hanh_chinh/384",
+              "baseline": 43.556492034737985,
+              "new": 44.425998748565085,
+              "delta": 0.8695067138271
+            }
+          ],
+          "largest_regressions": [
+            {
+              "sample_id": "Dich_vu_phap_ly/105",
+              "baseline": 52.105556544635,
+              "new": 48.741691267461725,
+              "delta": -3.363865277173275
+            },
+            {
+              "sample_id": "Quyen_dan_su/164",
+              "baseline": 44.00067537541349,
+              "new": 40.86533295769304,
+              "delta": -3.1353424177204516
+            },
+            {
+              "sample_id": "So_huu_tri_tue/118",
+              "baseline": 53.57125664482488,
+              "new": 50.89434497800066,
+              "delta": -2.6769116668242177
+            },
+            {
+              "sample_id": "Quyen_dan_su/364",
+              "baseline": 50.98569036745171,
+              "new": 48.4381093837746,
+              "delta": -2.5475809836771077
+            },
+            {
+              "sample_id": "Thu_tuc_to_tung/209",
+              "baseline": 48.174970380386135,
+              "new": 45.81551477092244,
+              "delta": -2.3594556094636943
+            }
+          ]
+        }
+      },
+      "categories": {
+        "Bat_dong_san": {
+          "documents": 5,
+          "corpus_bleu": {
+            "baseline": 44.08933409030075,
+            "batch_length": 44.04839799757902,
+            "glossary": 43.5180472788891
+          }
+        },
+        "Dich_vu_phap_ly": {
+          "documents": 5,
+          "corpus_bleu": {
+            "baseline": 47.13438439747201,
+            "batch_length": 47.17292711331281,
+            "glossary": 46.79198150581435
+          }
+        },
+        "Quyen_dan_su": {
+          "documents": 12,
+          "corpus_bleu": {
+            "baseline": 34.12686467758912,
+            "batch_length": 34.44148303182916,
+            "glossary": 34.0332064691176
+          }
+        },
+        "So_huu_tri_tue": {
+          "documents": 5,
+          "corpus_bleu": {
+            "baseline": 52.39527371156,
+            "batch_length": 52.37172493421695,
+            "glossary": 51.998775319188574
+          }
+        },
+        "Thu_tuc_to_tung": {
+          "documents": 4,
+          "corpus_bleu": {
+            "baseline": 40.8991141088639,
+            "batch_length": 41.01072928116037,
+            "glossary": 40.384633270350314
+          }
+        },
+        "Trach_nhiem_hinh_su": {
+          "documents": 7,
+          "corpus_bleu": {
+            "baseline": 47.31707064870248,
+            "batch_length": 47.26488537169241,
+            "glossary": 46.664570291764605
+          }
+        },
+        "Vi_pham_hanh_chinh": {
+          "documents": 12,
+          "corpus_bleu": {
+            "baseline": 45.090059154333154,
+            "batch_length": 45.083666785869084,
+            "glossary": 44.852352364923256
+          }
+        }
+      }
+    }
+  }
+}

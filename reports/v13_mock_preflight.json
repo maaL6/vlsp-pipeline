@@ -1,0 +1,57 @@
+{
+  "model": "mock echo; NOT GPU benchmark or translations",
+  "runs": {
+    "batch_length/en-vi": {
+      "documents": 50,
+      "requests": 2213,
+      "recovery_requests": 0,
+      "statuses": {
+        "completed": 50
+      },
+      "unresolved_units": 0,
+      "op_error_count": 0,
+      "runtime": 55.333,
+      "prompts_with_glossary": 0,
+      "all_roundtrip_ok": true
+    },
+    "batch_length/vi-en": {
+      "documents": 50,
+      "requests": 2296,
+      "recovery_requests": 0,
+      "statuses": {
+        "completed": 50
+      },
+      "unresolved_units": 0,
+      "op_error_count": 0,
+      "runtime": 59.786,
+      "prompts_with_glossary": 0,
+      "all_roundtrip_ok": true
+    },
+    "glossary/en-vi": {
+      "documents": 50,
+      "requests": 2213,
+      "recovery_requests": 0,
+      "statuses": {
+        "completed": 50
+      },
+      "unresolved_units": 0,
+      "op_error_count": 0,
+      "runtime": 53.301,
+      "prompts_with_glossary": 1517,
+      "all_roundtrip_ok": true
+    },
+    "glossary/vi-en": {
+      "documents": 50,
+      "requests": 2296,
+      "recovery_requests": 0,
+      "statuses": {
+        "completed": 50
+      },
+      "unresolved_units": 0,
+      "op_error_count": 0,
+      "runtime": 53.052,
+      "prompts_with_glossary": 1785,
+      "all_roundtrip_ok": true
+    }
+  }
+}

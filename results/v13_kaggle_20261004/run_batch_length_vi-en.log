@@ -1,0 +1,73 @@
+[transformers] Unrecognized keys in `rope_parameters` for 'rope_type'='dynamic': {'beta_slow', 'alpha', 'beta_fast', 'mscale_all_dim', 'mscale'}
+[transformers] Unrecognized keys in `rope_parameters` for 'rope_type'='dynamic': {'beta_slow', 'alpha', 'beta_fast', 'mscale_all_dim', 'mscale'}
+Loading weights:   0%|          | 0/354 [00:00<?, ?it/s]Loading weights:   0%|          | 1/354 [00:00<01:04,  5.48it/s]Loading weights:  19%|█▉        | 69/354 [00:00<00:01, 261.05it/s]Loading weights:  28%|██▊       | 99/354 [00:00<00:00, 274.64it/s]Loading weights:  36%|███▋      | 129/354 [00:00<00:00, 243.99it/s]Loading weights:  44%|████▍     | 157/354 [00:00<00:00, 224.58it/s]Loading weights:  51%|█████     | 181/354 [00:00<00:00, 215.75it/s]Loading weights:  60%|█████▉    | 212/354 [00:00<00:00, 229.37it/s]Loading weights:  67%|██████▋   | 236/354 [00:01<00:00, 216.99it/s]Loading weights:  73%|███████▎  | 259/354 [00:01<00:00, 216.59it/s]Loading weights:  82%|████████▏ | 289/354 [00:01<00:00, 225.19it/s]Loading weights:  88%|████████▊ | 312/354 [00:01<00:00, 222.99it/s]Loading weights:  95%|█████████▍| 335/354 [00:01<00:00, 212.64it/s]Loading weights: 100%|██████████| 354/354 [00:01<00:00, 223.09it/s]
+[transformers] Ignoring clean_up_tokenization_spaces=True for BPE tokenizer TokenizersBackend. The clean_up_tokenization post-processing step is designed for WordPiece tokenizers and is destructive for BPE (it strips spaces before punctuation). Set clean_up_tokenization_spaces=False to suppress this warning, or set clean_up_tokenization_spaces_for_bpe_even_though_it_will_corrupt_output=True to force cleanup anyway.
+[vi-en] 1/50 Dich_vu_phap_ly/67: completed requests=18 t=348s
+[vi-en] 2/50 Vi_pham_hanh_chinh/315: completed requests=21 t=730s
+[vi-en] 3/50 Quyen_dan_su/462: completed requests=220 t=2348s
+[vi-en] 4/50 Quyen_dan_su/320: completed requests=85 t=3122s
+[vi-en] 5/50 Trach_nhiem_hinh_su/140: completed requests=145 t=3288s
+[vi-en] 6/50 Quyen_dan_su/204: completed requests=57 t=3656s
+[vi-en] 7/50 Bat_dong_san/155: completed requests=256 t=3824s
+[vi-en] 8/50 Quyen_dan_su/454: completed requests=34 t=3871s
+[vi-en] 9/50 Quyen_dan_su/164: completed requests=38 t=3892s
+[vi-en] 10/50 Bat_dong_san/137: completed requests=30 t=4211s
+[vi-en] 11/50 Dich_vu_phap_ly/43: completed requests=25 t=4623s
+[vi-en] 12/50 Dich_vu_phap_ly/105: completed requests=13 t=4939s
+[vi-en] 13/50 Thu_tuc_to_tung/164: completed requests=67 t=5124s
+[vi-en] 14/50 Vi_pham_hanh_chinh/37: completed requests=106 t=5160s
+[vi-en] 15/50 Quyen_dan_su/390: completed requests=172 t=5422s
+[vi-en] 16/50 Thu_tuc_to_tung/46: completed requests=28 t=5520s
+[vi-en] 17/50 Quyen_dan_su/313: completed requests=19 t=5663s
+[vi-en] 18/50 Vi_pham_hanh_chinh/384: completed requests=106 t=5774s
+[vi-en] 19/50 Trach_nhiem_hinh_su/53: completed requests=96 t=5816s
+[vi-en] 20/50 Bat_dong_san/143: completed requests=254 t=5963s
+[vi-en] 21/50 Vi_pham_hanh_chinh/289: completed requests=84 t=6084s
+[vi-en] 22/50 Trach_nhiem_hinh_su/114: completed requests=26 t=6178s
+[vi-en] 23/50 So_huu_tri_tue/71: completed requests=71 t=6246s
+[vi-en] 24/50 Dich_vu_phap_ly/26: completed requests=495 t=6364s
+[vi-en] 25/50 Thu_tuc_to_tung/209: completed requests=159 t=6386s
+[vi-en] 26/50 Bat_dong_san/73: completed requests=25 t=6388s
+[vi-en] 27/50 Vi_pham_hanh_chinh/20: completed requests=270 t=6612s
+[vi-en] 28/50 Vi_pham_hanh_chinh/164: completed requests=137 t=6705s
+[vi-en] 29/50 Quyen_dan_su/29: completed requests=34 t=6765s
+[vi-en] 30/50 Quyen_dan_su/346: completed requests=34 t=6785s
+[vi-en] 31/50 Trach_nhiem_hinh_su/27: completed requests=160 t=6886s
+[vi-en] 32/50 Vi_pham_hanh_chinh/155: completed requests=100 t=6920s
+[vi-en] 33/50 Vi_pham_hanh_chinh/502: completed requests=103 t=6970s
+[vi-en] 34/50 Bat_dong_san/93: completed requests=30 t=6990s
+[vi-en] 35/50 Vi_pham_hanh_chinh/99: completed requests=167 t=7039s
+[vi-en] 36/50 So_huu_tri_tue/169: completed requests=235 t=7165s
+[vi-en] 37/50 Trach_nhiem_hinh_su/18: completed requests=68 t=7216s
+[vi-en] 38/50 Dich_vu_phap_ly/1: completed requests=55 t=7246s
+[vi-en] 39/50 Trach_nhiem_hinh_su/99: completed requests=60 t=7271s
+[vi-en] 40/50 So_huu_tri_tue/118: completed requests=126 t=7329s
+[vi-en] 41/50 Quyen_dan_su/107: completed requests=14 t=7374s
+[vi-en] 42/50 Trach_nhiem_hinh_su/55: completed requests=28 t=7401s
+[vi-en] 43/50 Quyen_dan_su/364: completed requests=15 t=7404s
+[vi-en] 44/50 Vi_pham_hanh_chinh/419: completed requests=143 t=7463s
+[vi-en] 45/50 Thu_tuc_to_tung/111: completed requests=99 t=7833s
+[vi-en] 46/50 Vi_pham_hanh_chinh/25: completed requests=109 t=7909s
+[vi-en] 47/50 So_huu_tri_tue/111: completed requests=760 t=8088s
+[vi-en] 48/50 So_huu_tri_tue/7: completed requests=565 t=8117s
+[vi-en] 49/50 Quyen_dan_su/139: completed requests=38 t=8163s
+[vi-en] 50/50 Vi_pham_hanh_chinh/285: completed requests=153 t=8164s
+{
+  "vi-en": {
+    "documents": 50,
+    "requests": 6153,
+    "recovery_requests": 3857,
+    "statuses": {
+      "completed": 50
+    },
+    "unresolved_units": 0,
+    "op_error_count": 0,
+    "runtime": 8163.722
+  }
+}
+{
+  "output_dir": "/kaggle/working/hyp_batch_length/en",
+  "written": 50,
+  "missing": [],
+  "work_dir": "/kaggle/working/work_batch_length_vi-en"
+}

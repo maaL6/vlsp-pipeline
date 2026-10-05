@@ -1,0 +1,540 @@
+[
+  {
+    "system": "/kaggle/working/hyp_glossary [en-vi]",
+    "missing": 0,
+    "raw": {
+      "bleu": 68.97,
+      "chrf": 83.43
+    },
+    "nfc": {
+      "bleu": 68.99,
+      "chrf": 83.46
+    },
+    "text": {
+      "bleu": 68.55,
+      "chrf": 83.37
+    },
+    "signature": "nrefs:1|case:mixed|eff:no|tok:13a|smooth:exp|version:2.6.0",
+    "per_doc": [
+      {
+        "sample_id": "Bat_dong_san/137",
+        "bleu": 59.78,
+        "len_ratio": 0.988
+      },
+      {
+        "sample_id": "Bat_dong_san/143",
+        "bleu": 61.79,
+        "len_ratio": 1.033
+      },
+      {
+        "sample_id": "Bat_dong_san/155",
+        "bleu": 56.28,
+        "len_ratio": 0.989
+      },
+      {
+        "sample_id": "Bat_dong_san/73",
+        "bleu": 61.17,
+        "len_ratio": 0.988
+      },
+      {
+        "sample_id": "Bat_dong_san/93",
+        "bleu": 54.46,
+        "len_ratio": 0.843
+      },
+      {
+        "sample_id": "Dich_vu_phap_ly/1",
+        "bleu": 80.37,
+        "len_ratio": 0.981
+      },
+      {
+        "sample_id": "Dich_vu_phap_ly/105",
+        "bleu": 71.83,
+        "len_ratio": 0.965
+      },
+      {
+        "sample_id": "Dich_vu_phap_ly/26",
+        "bleu": 57.51,
+        "len_ratio": 0.874
+      },
+      {
+        "sample_id": "Dich_vu_phap_ly/43",
+        "bleu": 63.04,
+        "len_ratio": 0.904
+      },
+      {
+        "sample_id": "Dich_vu_phap_ly/67",
+        "bleu": 89.96,
+        "len_ratio": 0.983
+      },
+      {
+        "sample_id": "Quyen_dan_su/107",
+        "bleu": 57.34,
+        "len_ratio": 0.871
+      },
+      {
+        "sample_id": "Quyen_dan_su/139",
+        "bleu": 55.42,
+        "len_ratio": 0.942
+      },
+      {
+        "sample_id": "Quyen_dan_su/164",
+        "bleu": 66.27,
+        "len_ratio": 0.947
+      },
+      {
+        "sample_id": "Quyen_dan_su/204",
+        "bleu": 78.7,
+        "len_ratio": 0.965
+      },
+      {
+        "sample_id": "Quyen_dan_su/29",
+        "bleu": 60.99,
+        "len_ratio": 0.988
+      },
+      {
+        "sample_id": "Quyen_dan_su/313",
+        "bleu": 49.47,
+        "len_ratio": 0.991
+      },
+      {
+        "sample_id": "Quyen_dan_su/320",
+        "bleu": 72.78,
+        "len_ratio": 1.01
+      },
+      {
+        "sample_id": "Quyen_dan_su/346",
+        "bleu": 67.9,
+        "len_ratio": 0.984
+      },
+      {
+        "sample_id": "Quyen_dan_su/364",
+        "bleu": 61.4,
+        "len_ratio": 0.928
+      },
+      {
+        "sample_id": "Quyen_dan_su/390",
+        "bleu": 1.48,
+        "len_ratio": 0.635
+      },
+      {
+        "sample_id": "Quyen_dan_su/454",
+        "bleu": 47.96,
+        "len_ratio": 1.009
+      },
+      {
+        "sample_id": "Quyen_dan_su/462",
+        "bleu": 45.86,
+        "len_ratio": 0.933
+      },
+      {
+        "sample_id": "So_huu_tri_tue/111",
+        "bleu": 68.83,
+        "len_ratio": 0.978
+      },
+      {
+        "sample_id": "So_huu_tri_tue/118",
+        "bleu": 73.19,
+        "len_ratio": 0.999
+      },
+      {
+        "sample_id": "So_huu_tri_tue/169",
+        "bleu": 55.06,
+        "len_ratio": 0.979
+      },
+      {
+        "sample_id": "So_huu_tri_tue/7",
+        "bleu": 73.39,
+        "len_ratio": 0.962
+      },
+      {
+        "sample_id": "So_huu_tri_tue/71",
+        "bleu": 62.38,
+        "len_ratio": 0.938
+      },
+      {
+        "sample_id": "Thu_tuc_to_tung/111",
+        "bleu": 68.27,
+        "len_ratio": 0.936
+      },
+      {
+        "sample_id": "Thu_tuc_to_tung/164",
+        "bleu": 79.4,
+        "len_ratio": 1.002
+      },
+      {
+        "sample_id": "Thu_tuc_to_tung/209",
+        "bleu": 69.73,
+        "len_ratio": 0.935
+      },
+      {
+        "sample_id": "Thu_tuc_to_tung/46",
+        "bleu": 61.87,
+        "len_ratio": 0.922
+      },
+      {
+        "sample_id": "Trach_nhiem_hinh_su/114",
+        "bleu": 64.94,
+        "len_ratio": 1.02
+      },
+      {
+        "sample_id": "Trach_nhiem_hinh_su/140",
+        "bleu": 48.2,
+        "len_ratio": 1.104
+      },
+      {
+        "sample_id": "Trach_nhiem_hinh_su/18",
+        "bleu": 83.77,
+        "len_ratio": 1.006
+      },
+      {
+        "sample_id": "Trach_nhiem_hinh_su/27",
+        "bleu": 83.92,
+        "len_ratio": 0.992
+      },
+      {
+        "sample_id": "Trach_nhiem_hinh_su/53",
+        "bleu": 72.58,
+        "len_ratio": 0.981
+      },
+      {
+        "sample_id": "Trach_nhiem_hinh_su/55",
+        "bleu": 60.28,
+        "len_ratio": 0.977
+      },
+      {
+        "sample_id": "Trach_nhiem_hinh_su/99",
+        "bleu": 72.37,
+        "len_ratio": 0.976
+      },
+      {
+        "sample_id": "Vi_pham_hanh_chinh/155",
+        "bleu": 74.3,
+        "len_ratio": 1.019
+      },
+      {
+        "sample_id": "Vi_pham_hanh_chinh/164",
+        "bleu": 68.63,
+        "len_ratio": 0.99
+      },
+      {
+        "sample_id": "Vi_pham_hanh_chinh/20",
+        "bleu": 77.17,
+        "len_ratio": 1.0
+      },
+      {
+        "sample_id": "Vi_pham_hanh_chinh/25",
+        "bleu": 77.48,
+        "len_ratio": 0.971
+      },
+      {
+        "sample_id": "Vi_pham_hanh_chinh/285",
+        "bleu": 78.05,
+        "len_ratio": 0.993
+      },
+      {
+        "sample_id": "Vi_pham_hanh_chinh/289",
+        "bleu": 67.13,
+        "len_ratio": 0.92
+      },
+      {
+        "sample_id": "Vi_pham_hanh_chinh/315",
+        "bleu": 84.25,
+        "len_ratio": 1.017
+      },
+      {
+        "sample_id": "Vi_pham_hanh_chinh/37",
+        "bleu": 84.64,
+        "len_ratio": 0.988
+      },
+      {
+        "sample_id": "Vi_pham_hanh_chinh/384",
+        "bleu": 71.06,
+        "len_ratio": 1.084
+      },
+      {
+        "sample_id": "Vi_pham_hanh_chinh/419",
+        "bleu": 26.75,
+        "len_ratio": 0.878
+      },
+      {
+        "sample_id": "Vi_pham_hanh_chinh/502",
+        "bleu": 61.41,
+        "len_ratio": 0.986
+      },
+      {
+        "sample_id": "Vi_pham_hanh_chinh/99",
+        "bleu": 68.55,
+        "len_ratio": 0.985
+      }
+    ]
+  },
+  {
+    "system": "/kaggle/working/hyp_glossary [vi-en]",
+    "missing": 0,
+    "raw": {
+      "bleu": 46.26,
+      "chrf": 79.14
+    },
+    "nfc": {
+      "bleu": 46.26,
+      "chrf": 79.14
+    },
+    "text": {
+      "bleu": 45.43,
+      "chrf": 79.1
+    },
+    "signature": "nrefs:1|case:mixed|eff:no|tok:13a|smooth:exp|version:2.6.0",
+    "per_doc": [
+      {
+        "sample_id": "Bat_dong_san/137",
+        "bleu": 48.32,
+        "len_ratio": 0.981
+      },
+      {
+        "sample_id": "Bat_dong_san/143",
+        "bleu": 44.95,
+        "len_ratio": 0.982
+      },
+      {
+        "sample_id": "Bat_dong_san/155",
+        "bleu": 48.57,
+        "len_ratio": 1.029
+      },
+      {
+        "sample_id": "Bat_dong_san/73",
+        "bleu": 41.89,
+        "len_ratio": 1.04
+      },
+      {
+        "sample_id": "Bat_dong_san/93",
+        "bleu": 35.04,
+        "len_ratio": 1.224
+      },
+      {
+        "sample_id": "Dich_vu_phap_ly/1",
+        "bleu": 51.68,
+        "len_ratio": 0.981
+      },
+      {
+        "sample_id": "Dich_vu_phap_ly/105",
+        "bleu": 48.74,
+        "len_ratio": 0.955
+      },
+      {
+        "sample_id": "Dich_vu_phap_ly/26",
+        "bleu": 38.14,
+        "len_ratio": 1.148
+      },
+      {
+        "sample_id": "Dich_vu_phap_ly/43",
+        "bleu": 36.76,
+        "len_ratio": 1.148
+      },
+      {
+        "sample_id": "Dich_vu_phap_ly/67",
+        "bleu": 74.65,
+        "len_ratio": 0.965
+      },
+      {
+        "sample_id": "Quyen_dan_su/107",
+        "bleu": 28.87,
+        "len_ratio": 1.227
+      },
+      {
+        "sample_id": "Quyen_dan_su/139",
+        "bleu": 41.39,
+        "len_ratio": 1.08
+      },
+      {
+        "sample_id": "Quyen_dan_su/164",
+        "bleu": 40.87,
+        "len_ratio": 1.111
+      },
+      {
+        "sample_id": "Quyen_dan_su/204",
+        "bleu": 53.59,
+        "len_ratio": 0.976
+      },
+      {
+        "sample_id": "Quyen_dan_su/29",
+        "bleu": 48.3,
+        "len_ratio": 1.014
+      },
+      {
+        "sample_id": "Quyen_dan_su/313",
+        "bleu": 41.37,
+        "len_ratio": 0.959
+      },
+      {
+        "sample_id": "Quyen_dan_su/320",
+        "bleu": 44.63,
+        "len_ratio": 0.963
+      },
+      {
+        "sample_id": "Quyen_dan_su/346",
+        "bleu": 44.67,
+        "len_ratio": 0.941
+      },
+      {
+        "sample_id": "Quyen_dan_su/364",
+        "bleu": 48.44,
+        "len_ratio": 0.991
+      },
+      {
+        "sample_id": "Quyen_dan_su/390",
+        "bleu": 8.46,
+        "len_ratio": 1.515
+      },
+      {
+        "sample_id": "Quyen_dan_su/454",
+        "bleu": 25.68,
+        "len_ratio": 1.049
+      },
+      {
+        "sample_id": "Quyen_dan_su/462",
+        "bleu": 30.09,
+        "len_ratio": 1.011
+      },
+      {
+        "sample_id": "So_huu_tri_tue/111",
+        "bleu": 46.42,
+        "len_ratio": 1.038
+      },
+      {
+        "sample_id": "So_huu_tri_tue/118",
+        "bleu": 50.89,
+        "len_ratio": 0.998
+      },
+      {
+        "sample_id": "So_huu_tri_tue/169",
+        "bleu": 47.15,
+        "len_ratio": 0.978
+      },
+      {
+        "sample_id": "So_huu_tri_tue/7",
+        "bleu": 56.13,
+        "len_ratio": 1.039
+      },
+      {
+        "sample_id": "So_huu_tri_tue/71",
+        "bleu": 40.92,
+        "len_ratio": 1.092
+      },
+      {
+        "sample_id": "Thu_tuc_to_tung/111",
+        "bleu": 34.69,
+        "len_ratio": 1.013
+      },
+      {
+        "sample_id": "Thu_tuc_to_tung/164",
+        "bleu": 39.0,
+        "len_ratio": 1.009
+      },
+      {
+        "sample_id": "Thu_tuc_to_tung/209",
+        "bleu": 45.82,
+        "len_ratio": 1.055
+      },
+      {
+        "sample_id": "Thu_tuc_to_tung/46",
+        "bleu": 42.2,
+        "len_ratio": 1.034
+      },
+      {
+        "sample_id": "Trach_nhiem_hinh_su/114",
+        "bleu": 44.92,
+        "len_ratio": 0.979
+      },
+      {
+        "sample_id": "Trach_nhiem_hinh_su/140",
+        "bleu": 42.98,
+        "len_ratio": 0.988
+      },
+      {
+        "sample_id": "Trach_nhiem_hinh_su/18",
+        "bleu": 57.52,
+        "len_ratio": 0.975
+      },
+      {
+        "sample_id": "Trach_nhiem_hinh_su/27",
+        "bleu": 46.88,
+        "len_ratio": 0.996
+      },
+      {
+        "sample_id": "Trach_nhiem_hinh_su/53",
+        "bleu": 39.36,
+        "len_ratio": 0.966
+      },
+      {
+        "sample_id": "Trach_nhiem_hinh_su/55",
+        "bleu": 38.13,
+        "len_ratio": 1.002
+      },
+      {
+        "sample_id": "Trach_nhiem_hinh_su/99",
+        "bleu": 43.61,
+        "len_ratio": 1.014
+      },
+      {
+        "sample_id": "Vi_pham_hanh_chinh/155",
+        "bleu": 52.43,
+        "len_ratio": 0.971
+      },
+      {
+        "sample_id": "Vi_pham_hanh_chinh/164",
+        "bleu": 47.79,
+        "len_ratio": 1.003
+      },
+      {
+        "sample_id": "Vi_pham_hanh_chinh/20",
+        "bleu": 52.07,
+        "len_ratio": 0.949
+      },
+      {
+        "sample_id": "Vi_pham_hanh_chinh/25",
+        "bleu": 41.71,
+        "len_ratio": 1.077
+      },
+      {
+        "sample_id": "Vi_pham_hanh_chinh/285",
+        "bleu": 37.49,
+        "len_ratio": 0.966
+      },
+      {
+        "sample_id": "Vi_pham_hanh_chinh/289",
+        "bleu": 36.55,
+        "len_ratio": 1.069
+      },
+      {
+        "sample_id": "Vi_pham_hanh_chinh/315",
+        "bleu": 68.21,
+        "len_ratio": 0.993
+      },
+      {
+        "sample_id": "Vi_pham_hanh_chinh/37",
+        "bleu": 49.46,
+        "len_ratio": 0.948
+      },
+      {
+        "sample_id": "Vi_pham_hanh_chinh/384",
+        "bleu": 44.43,
+        "len_ratio": 0.985
+      },
+      {
+        "sample_id": "Vi_pham_hanh_chinh/419",
+        "bleu": 20.12,
+        "len_ratio": 1.147
+      },
+      {
+        "sample_id": "Vi_pham_hanh_chinh/502",
+        "bleu": 32.1,
+        "len_ratio": 0.941
+      },
+      {
+        "sample_id": "Vi_pham_hanh_chinh/99",
+        "bleu": 50.26,
+        "len_ratio": 1.003
+      }
+    ]
+  }
+]

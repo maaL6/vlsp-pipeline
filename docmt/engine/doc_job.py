@@ -273,9 +273,12 @@ class _DocJob:
         hist = cfg.target_history and allow_history
         if not (cfg.source_context or cfg.soft_glossary or hist):
             return []
+        # Glossary-only requests have no SourceIndex. Pass the known source
+        # language rather than guessing it from short labels or proper names.
+        kwargs = {"src_lang": self.item.src_lang} if (cfg.extra or {}).get("glossary_source_language") else {}
         items = self.comp.select_evidence(unit, self.nodes_by_id, self.index, self.memory if hist else None,
                                           self.run.glossary if cfg.soft_glossary else None, self.tok, cfg,
-                                          self.doc_id)
+                                          self.doc_id, **kwargs)
         keep = []
         for it in items or []:
             if it.kind == "glossary":

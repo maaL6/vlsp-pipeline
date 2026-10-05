@@ -1,0 +1,18 @@
+{
+  "reviewed_candidates": 442,
+  "kept": 368,
+  "dropped_no_train_witness": 74,
+  "train_rows": 32497,
+  "train_documents": 665,
+  "dev_documents": 42,
+  "public_documents": 50,
+  "train_dev_overlap": 0,
+  "train_public_overlap": 0,
+  "source_glossary_sha256": "983870251e4224b150e191a5bc8bee36595f932201f7d9cd2d0abc7d4661daf4",
+  "train_sha256": "2eca174c108a15f96a25f678dd877d79145f7d229bf7cbaeb6bd774d71571aa4",
+  "dev_ids_sha256": "59972cf5ab8afb0818fbda36b1926bc197cff242fa32129f8bf8099b861bbe57",
+  "public_csv_sha256": "dd7e0070a735da6a82de1c5c426afb8fdc4a9b0bf16c1271cf2396ddb95d4ef3",
+  "output_sha256": "f99b99ff95b5db415e610027aeceab1b0ca2f0ef15eef748af902196d8022fca",
+  "reference_targets_read": false,
+  "caveat": "Witnesses establish train provenance/co-occurrence, not a new semantic expert review."
+}

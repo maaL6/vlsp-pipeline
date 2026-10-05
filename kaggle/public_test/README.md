@@ -23,3 +23,22 @@ bị `.gitignore`; tóm tắt kết quả 04/10/2026 được giữ ở `reports
 
 Run 04/10/2026: A `wann179/vlsp26-lam-pt50-markers`, C `wann179/vlsp26-lam-pt50-nomarker`,
 B `maal06/vlsp26-lam-pt50-newline`; run_id `hy_a1_structure{,_nomarker,_newline}__pt50__kaggleT4__20261004`.
+
+## v1.3: hai thay đổi riêng trên cùng máy T4 ×2
+
+`kernel_v13.py` chạy `hy_a1_v13_batch_length.json` trên GPU 0 và
+`hy_a1_v13_glossary.json` trên GPU 1. Mỗi GPU chạy EN→VI rồi VI→EN,
+chuyển chiều độc lập; batch size 4, fp16, greedy, giữ delimiter newline.
+Kernel bắt buộc máy có đúng hai T4, kiểm SHA256 code/model/CSV trước khi dịch.
+
+- `build_v13_bundle.py`: đóng gói working tree chưa commit và evaluator chuẩn trong `build/original/`.
+- `preflight_v13.py`: kiểm tra đủ 50 doc × 2 chiều × 2 config bằng model giả và tokenizer A1 thật;
+  báo cáo `reports/v13_mock_preflight.json`, không chấm BLEU cho bản echo.
+- `monitor_v13.py`: nhận token qua prompt ẩn, giữ trong bộ nhớ, theo dõi và tải outputs khi xong.
+- `evaluate_v13.py <output-dir>`: chấm lại local bằng evaluator gốc; xử lý giới hạn CSV của Windows.
+- `summarize_v13.py <output-dir>`: kiểm tra đủ predictions, tóm tắt BLEU/runtime/recovery/unresolved/padding;
+  tạo `reports/v13_kaggle_results.json` và cập nhật `reports/v13_kaggle_run.md`.
+
+Kernel private: `wann179/vlsp26-v13-batching-glossary-pt50`.
+Dataset code private: `wann179/vlsp26-pipeline-v13-pt50`.
+Theo dõi trạng thái hiện tại trong `reports/v13_kaggle_run.md`.

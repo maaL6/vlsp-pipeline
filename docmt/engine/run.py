@@ -104,13 +104,42 @@ class _Run:
         self.require()
         self.jobs = [_DocJob(self, it) for it in items]
         limit = 1 if self.cfg.target_history else None
-        runners = [_Runner(j, limit) for j in self.jobs]
+        policy = (self.cfg.extra or {}).get("batch_policy", "fifo")
+        if policy not in ("fifo", "length"):
+            raise ValueError(f"unknown batch_policy: {policy!r}")
+        key = self._length_key if policy == "length" else None
+        runners = [_Runner(j, limit, order_key=key) for j in self.jobs]
         self._schedule(runners)
         return [j.result for j in self.jobs]
+
+    def _length_key(self, req):
+        # Prompt/budget buckets keep similar generation shapes together. Request
+        # identity, payload, budget and expected result order remain unchanged.
+        prompt_tokens = self.tok.count(req.prompt)
+        return (prompt_tokens // 64, int(req.max_new_tokens) // 128,
+                prompt_tokens, int(req.max_new_tokens), req.request_id)
+
+    def _length_batch(self, runners, bs):
+        batch = []
+        while len(batch) < bs:
+            ready = [r for r in runners if r.ready()]
+            if not ready:
+                break
+            runner = min(ready, key=lambda r: self._length_key(r.waiting[0]))
+            req = runner.take()
+            hit = self.lookup(req)
+            if hit is not None:
+                runner.deliver(req, hit)
+            else:
+                batch.append((runner, req))
+        return batch
 
     def _schedule(self, runners):
         bs = max(1, int(self.cfg.batch_size))
         batching = bool(getattr(self.backend, "batching", False))
+        length_order = (self.cfg.extra or {}).get("batch_policy", "fifo") == "length"
+        if length_order and not batching:
+            raise ValueError("batch_policy=length requires a batching backend")
         for r in runners:
             r.start()
         pool = cf.ThreadPoolExecutor(max_workers=1 if batching else bs, thread_name_prefix="gen")
@@ -119,19 +148,22 @@ class _Run:
             while True:
                 if batching:
                     if not inflight:
-                        batch = []
-                        progressed = True
-                        while progressed and len(batch) < bs:
-                            progressed = False
-                            for r in runners:
-                                while len(batch) < bs and r.ready():
-                                    req = r.take()
-                                    hit = self.lookup(req)
-                                    progressed = True
-                                    if hit is not None:
-                                        r.deliver(req, hit)
-                                    else:
-                                        batch.append((r, req))
+                        if length_order:
+                            batch = self._length_batch(runners, bs)
+                        else:
+                            batch = []
+                            progressed = True
+                            while progressed and len(batch) < bs:
+                                progressed = False
+                                for r in runners:
+                                    while len(batch) < bs and r.ready():
+                                        req = r.take()
+                                        hit = self.lookup(req)
+                                        progressed = True
+                                        if hit is not None:
+                                            r.deliver(req, hit)
+                                        else:
+                                            batch.append((r, req))
                         if batch:
                             inflight[pool.submit(self.call, [q for _, q in batch])] = batch
                 else:
