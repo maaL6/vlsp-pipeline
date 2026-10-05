@@ -16,3 +16,6 @@ venv/
 # kaggle staging / downloaded results
 kaggle/public_test/build/
 kaggle/public_test/results/
+results/v13_kaggle_20261004/
+# generated default AIHub submission
+/submission.zip

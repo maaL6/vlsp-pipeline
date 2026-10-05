@@ -1,5 +1,17 @@
 # CHANGE_NOTES — pipeline-v1
 
+## Đóng gói submission AIHub (05/10/2026)
+
+Thêm `tools/build_submission.py`: lấy danh sách `(sample_id, direction)` từ CSV mẫu,
+điền toàn bộ nội dung Markdown từ thư mục output từng chiều, xuất ZIP chỉ có `results.csv` ở gốc.
+CSV dùng UTF-8, quote/escape chuẩn; giữ nội dung tài liệu và thứ tự template. Kiểm tra key trùng,
+direction sai, thiếu file, bản dịch rỗng; không dùng nội dung mẫu làm fallback. Hỗ trợ template private
+test với mỗi ID chỉ có một chiều. Không thay đổi inference, recovery hoặc selection.
+
+Hướng dẫn đầy đủ: [docs/submission.md](docs/submission.md). Kiểm chứng local: output public test B
+100/100 bản dịch round-trip nguyên nội dung; Unicode, dấu nháy/phẩy, LF/CRLF, ô dài và template
+một chiều; input lỗi bị từ chối và giữ nguyên ZIP đích. Chưa nộp lên bộ chấm AIHub.
+
 ## v1.2 (04/10/2026) — B: unit gom bị lỗi luôn được dịch lại từng node
 
 **Vấn đề** (log run B, v1.1): 7 unit en-vi + 1 vi-en còn lỗi sau recovery. Phần lớn là lệch dòng mà số dòng

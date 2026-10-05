@@ -88,6 +88,28 @@ hoặc `DOCMT_TEST_INPUTS`), `tools/verify.sh`, `tools/replay_equivalence.py`, `
 Repo git riêng (`github.com/maaL6/vlsp-pipeline`, private); clone vào `VLSP26/pipeline-v1` thì các đường dẫn
 mặc định đúng, clone chỗ khác thì đặt `VLSP26_ROOT=/path/VLSP26` cho `tools/verify.sh`.
 
+## Tạo submission AIHub
+
+Hướng dẫn đầy đủ, ví dụ với output có sẵn, private test và xử lý lỗi: [docs/submission.md](docs/submission.md).
+
+Sau khi dịch xong hai chiều, đóng gói các file `.md` thành ZIP:
+
+```bash
+python tools/build_submission.py --en-vi OUTPUT_EN_VI --vi-en OUTPUT_VI_EN --out submission.zip
+```
+
+Mỗi thư mục output giữ cây `category/id.md` như `run-dir`. Nếu dùng `docmt run`, trỏ vào
+`RUN_DIR/predictions/en-vi` và `RUN_DIR/predictions/vi-en` tương ứng.
+Script mặc định đọc `dataset/sample_submission/results.csv` để lấy danh sách `(sample_id, direction)`
+và thứ tự; thay toàn bộ cột `translation` bằng nội dung file output, giữ nguyên Markdown và xuống dòng.
+Không dùng bản dịch trong mẫu làm fallback. Thiếu file, bản dịch rỗng, key trùng hoặc direction sai
+thì báo lỗi và không tạo/thay ZIP. File ZIP chỉ chứa `results.csv` ở gốc, đúng ba cột, UTF-8,
+quote/escape bằng thư viện CSV chuẩn. Upload `submission.zip` lên AIHub.
+
+Với private test, dùng `--template PATH_TO_PRIVATE_TEMPLATE.csv` có đúng các key của private test;
+script lấy số dòng và chiều dịch từ template, không cố định 100 dòng hay bắt buộc mỗi ID có hai chiều.
+Chỉ cần truyền thư mục của các chiều xuất hiện trong template.
+
 ## Chạy (chi tiết)
 
 ```bash
