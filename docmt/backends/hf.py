@@ -51,6 +51,15 @@ class HFBackend(Backend):
         self.pad_id = None
         self.versions: dict = {}
         self.gpu_name = None
+        extra = getattr(cfg, "extra", None) or {}
+        self.model_family = str(extra.get("model_family", "hy"))
+        self.adapter_path = str(extra.get("adapter", "") or "")
+        self.adapter_sha256 = None
+        if self.adapter_path:
+            import hashlib
+            from pathlib import Path
+            self.adapter_sha256 = hashlib.sha256(
+                (Path(self.adapter_path) / "adapter_model.safetensors").read_bytes()).hexdigest()
 
     # -- loading -----------------------------------------------------------------------------
     def prepare(self):
@@ -71,6 +80,10 @@ class HFBackend(Backend):
         tk = AutoTokenizer.from_pretrained(self.model_path, **({"revision": self.revision} if self.revision else {}))
         tk.padding_side = "left"
         model = AutoModelForCausalLM.from_pretrained(self.model_path, **kw).to(self.device)
+        if self.adapter_path:  # LoRA adapter (cfg.extra["adapter"]), merged for plain-model speed
+            from peft import PeftModel
+            model = PeftModel.from_pretrained(model, self.adapter_path).merge_and_unload()
+            self.versions_extra = {"peft": __import__("peft").__version__}
         model.eval()
         self.parameter_count = int(sum(p.numel() for p in model.parameters()))
         eos = model.generation_config.eos_token_id
@@ -80,16 +93,22 @@ class HFBackend(Backend):
             self.eos_ids.add(int(tk.eos_token_id))
         self.pad_id = tk.pad_token_id if tk.pad_token_id is not None else min(self.eos_ids)
         self.tokenizer, self.model = tk, model
-        self.versions = {"torch": torch.__version__, "transformers": transformers.__version__}
+        self.versions = {"torch": torch.__version__, "transformers": transformers.__version__,
+                         **getattr(self, "versions_extra", {})}
         if str(self.device).startswith("cuda") and torch.cuda.is_available():
             self.gpu_name = torch.cuda.get_device_name(0)
             torch.cuda.reset_peak_memory_stats()
 
     # -- generation --------------------------------------------------------------------------
     def decode_config(self) -> dict:
-        return {"backend": self.name, "do_sample": False, "num_beams": 1,
-                "repetition_penalty": float(getattr(self.cfg, "repetition_penalty", 1.05)),
-                "dtype": self.dtype_name, "padding": "left"}
+        d = {"backend": self.name, "do_sample": False, "num_beams": 1,
+             "repetition_penalty": float(getattr(self.cfg, "repetition_penalty", 1.05)),
+             "dtype": self.dtype_name, "padding": "left"}
+        if self.model_family != "hy":       # only non-HY runs get extra keys: HY cache keys unchanged
+            d["model_family"] = self.model_family
+        if self.adapter_sha256:
+            d["adapter_sha256"] = self.adapter_sha256
+        return d
 
     def generate(self, requests):
         reqs = list(requests)
@@ -159,6 +178,9 @@ class HFBackend(Backend):
         for i, r in enumerate(group):
             ids, eos = postprocess_ids(out[i, plen:].tolist(), self.eos_ids, int(r.max_new_tokens), self.pad_id)
             text = self.tokenizer.decode(ids, skip_special_tokens=True)
+            if self.model_family == "index":
+                from ..steps.s04_prompt_index import strip_thinking
+                text = strip_thinking(text)
             n_in = int(enc["attention_mask"][i].sum().item())
             results.append(GenResult(request_id=r.request_id, text=text, eos=eos,
                                      stop_type="eos" if eos else "limit", input_tokens=n_in,
@@ -182,6 +204,9 @@ class HFBackend(Backend):
         return {
             "backend": self.name,
             "model": self.model_path,
+            "model_family": self.model_family,
+            "adapter": self.adapter_path or None,
+            "adapter_sha256": self.adapter_sha256,
             "parameter_count": self.parameter_count,
             "parameter_count_source": ("counted after load: sum(p.numel() for p in model.parameters())"
                                        if self.parameter_count is not None else "not_checked (model not loaded)"),

@@ -110,6 +110,16 @@ def render_unit_prompt(unit, items, src_lang: str, tgt_lang: str, cfg, render_ba
             bg.append(it)
     background = render_background(bg) if bg else ""
     has_markers = bool(unit.markers)
+    if model_family(cfg) == "index":
+        from . import s04_prompt_index as idx
+        prompt = idx.build_prompt(unit.payload, tgt_lang, context=background, terms=terms, has_markers=has_markers)
+        return prompt, idx.template_label(background, terms, has_markers)
     prompt = build_prompt(unit.payload, tgt_lang, cfg.prompt_style, background=background,
                           terms=terms, has_markers=has_markers)
     return prompt, _prompt_template(cfg, background, terms, has_markers)
+
+
+def model_family(cfg) -> str:
+    """"hy" (default, A1 prompts above) or "index" (s04_prompt_index); set in cfg.extra so the
+    RunConfig fields, and therefore the config hash of existing HY runs, do not change."""
+    return str((getattr(cfg, "extra", None) or {}).get("model_family", "hy"))
