@@ -1,0 +1,79 @@
+{
+ "sacrebleu": "2.6.0",
+ "unit": "document",
+ "text": "raw",
+ "en-vi": {
+  "bleu": 60.05,
+  "chrf": 78.71,
+  "chrf_pp": 78.63,
+  "bp": 1.0,
+  "ratio": 1.049,
+  "signature": "nrefs:1|case:mixed|eff:no|tok:13a|smooth:exp|version:2.6.0",
+  "docs": 50,
+  "missing": [],
+  "lowest5": [
+   {
+    "sample_id": "Quyen_dan_su/390",
+    "bleu": 2.27,
+    "len_ratio": 0.446
+   },
+   {
+    "sample_id": "Trach_nhiem_hinh_su/140",
+    "bleu": 8.59,
+    "len_ratio": 3.707
+   },
+   {
+    "sample_id": "Quyen_dan_su/462",
+    "bleu": 13.98,
+    "len_ratio": 2.656
+   },
+   {
+    "sample_id": "Quyen_dan_su/454",
+    "bleu": 18.58,
+    "len_ratio": 2.272
+   },
+   {
+    "sample_id": "Bat_dong_san/143",
+    "bleu": 19.05,
+    "len_ratio": 2.239
+   }
+  ]
+ },
+ "vi-en": {
+  "bleu": 41.1,
+  "chrf": 76.22,
+  "chrf_pp": 73.44,
+  "bp": 1.0,
+  "ratio": 1.075,
+  "signature": "nrefs:1|case:mixed|eff:no|tok:13a|smooth:exp|version:2.6.0",
+  "docs": 50,
+  "missing": [],
+  "lowest5": [
+   {
+    "sample_id": "Quyen_dan_su/390",
+    "bleu": 6.9,
+    "len_ratio": 2.207
+   },
+   {
+    "sample_id": "Quyen_dan_su/462",
+    "bleu": 15.13,
+    "len_ratio": 2.187
+   },
+   {
+    "sample_id": "Vi_pham_hanh_chinh/419",
+    "bleu": 19.07,
+    "len_ratio": 1.317
+   },
+   {
+    "sample_id": "Quyen_dan_su/454",
+    "bleu": 24.37,
+    "len_ratio": 0.974
+   },
+   {
+    "sample_id": "Vi_pham_hanh_chinh/502",
+    "bleu": 27.99,
+    "len_ratio": 0.969
+   }
+  ]
+ }
+}

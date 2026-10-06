@@ -1,0 +1,2 @@
+en-vi: BLEU 60.05  chrF 78.71  chrF++ 78.63  BP 1.0  ratio 1.049  missing 0
+vi-en: BLEU 41.10  chrF 76.22  chrF++ 73.44  BP 1.0  ratio 1.075  missing 0

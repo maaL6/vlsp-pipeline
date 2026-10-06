@@ -1,0 +1,107 @@
+{
+  "tag": "index_pilot374",
+  "run_id": "index2b_structure_newline_index_pilot374__pt50__kaggleT4",
+  "config": "configs/index2b_pilot_newline.json",
+  "batch_size": 8,
+  "model": "IndexTeam/Index-Translate-2B",
+  "revision": "a516854233b170140b57d36b48d7148c0edebabb",
+  "model_sha256": "2f499211fe352913464be69365e2e5724f913051efb3ae2b6fd0fa617a4c0b60",
+  "adapter_sha256": "8e327b833e4f88b64de8e71a8e5ad8d5659ca57982b685729492f59cb5147d62",
+  "gpu_count": 2,
+  "gpu_name": "Tesla T4",
+  "reference_used_by_pipeline": false,
+  "utc_started": "2026-10-06T05:33:36.878259+00:00",
+  "directions": {
+    "en-vi": {
+      "gpu": 0,
+      "state": "finished",
+      "returncode": 0,
+      "seconds": 11820.2,
+      "predictions": 50,
+      "expected": 50,
+      "document_status": {
+        "completed_with_unresolved": 46,
+        "completed": 4
+      },
+      "run": {
+        "documents": 50,
+        "nodes": 16083,
+        "units": 2214,
+        "requests": 5073,
+        "requests_sent": 4551,
+        "cache_hits": 522,
+        "recovery_requests": 2859,
+        "retry_count": 372,
+        "runtime": 11750.966,
+        "prompt_tokens": 728102,
+        "generated_tokens": 748430,
+        "peak_vram": 4522106880,
+        "oom_count": 0,
+        "op_error_count": 0,
+        "unresolved_units": 176,
+        "unresolved_empty_nodes": 0,
+        "parameter_count": 1881825088
+      }
+    },
+    "vi-en": {
+      "gpu": 1,
+      "state": "finished",
+      "returncode": 0,
+      "seconds": 8250.1,
+      "predictions": 50,
+      "expected": 50,
+      "document_status": {
+        "completed_with_unresolved": 8,
+        "completed": 42
+      },
+      "run": {
+        "documents": 50,
+        "nodes": 16471,
+        "units": 2250,
+        "requests": 5248,
+        "requests_sent": 4626,
+        "cache_hits": 622,
+        "recovery_requests": 2998,
+        "retry_count": 353,
+        "runtime": 8156.406,
+        "prompt_tokens": 863331,
+        "generated_tokens": 621014,
+        "peak_vram": 4528627200,
+        "oom_count": 0,
+        "op_error_count": 0,
+        "unresolved_units": 13,
+        "unresolved_empty_nodes": 0,
+        "parameter_count": 1881825088
+      }
+    }
+  },
+  "scores": {
+    "en-vi": {
+      "bleu": 60.05,
+      "chrf": 78.71,
+      "chrf_pp": 78.63,
+      "bp": 1.0,
+      "ratio": 1.049,
+      "missing": 0
+    },
+    "vi-en": {
+      "bleu": 41.1,
+      "chrf": 76.22,
+      "chrf_pp": 73.44,
+      "bp": 1.0,
+      "ratio": 1.075,
+      "missing": 0
+    }
+  },
+  "vs_hy_a1_B": {
+    "en-vi": {
+      "bleu_delta": -8.85,
+      "chrf_delta": -4.68
+    },
+    "vi-en": {
+      "bleu_delta": -5.52,
+      "chrf_delta": -2.95
+    }
+  },
+  "utc_finished": "2026-10-06T08:51:18.760194+00:00"
+}
