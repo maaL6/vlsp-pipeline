@@ -1,0 +1,65 @@
+% Người phụ trách: TRANG. (~1 trang). Mục "System" trong dàn ý -> Method.
+% Nguồn: HYMT2_V33_FINETUNE_20261009/README_PACKAGE.md (train), KAGGLE_A1_FAST16_20261006/README_TOI_UU.md + FIX_NOTES.md
+% (runtime nộp cuối), run/kout/run_config.json (gói VLSP26-FINAL-001), vlsp-pipeline README + CHANGE_NOTES (A/B/C, bản trước).
+% LƯU Ý: bản NỘP là FAST16 ("legal prose blocks"), KHÁC pipeline B (gom <=8 node, newline, khớp dòng). A/B/C chỉ là ablation bản trước.
+\section{Method}
+\label{sec:method}
+
+\subsection{Backbone and fine-tuning}
+We use Hy-MT2-1.8B \citep{zheng2026hymt2} (dense, fp16, about 5\,GB of VRAM), which fits the 3B limit and one Kaggle T4.
+
+Training is causal-LM cross-entropy on the assistant turn only (translation plus end-of-sequence); prompt tokens are masked, as in our training script.
+Each pair uses a ``mixed'' prompt: with probability 0.5, if glossary pairs (442 terms) occur in both source and target, a terminology-hint prompt with at most eight pairs is used, otherwise the default instruction; inference always uses the default (Appendix~\ref{app:prompts}).
+Stage A1 trains LoRA \citep{hu2021lora} ($r{=}64$, $\alpha{=}128$, all attention and MLP projections, 4.15\% of parameters) on 53.5k segment-level pairs (mainly article and clause segments) for one epoch at $2\times10^{-4}$.
+Stage v33 \emph{warm-starts} from the A1 adapter and trains one more epoch on the 82{,}203 pairs of data v3.3 (Section~\ref{sec:data}) at the lower rate $5\times10^{-5}$ ($2\times10^{-4}$ is the rate for training LoRA from scratch); details are in Appendix~\ref{app:hyper}.
+
+\subsection{Document pipeline}
+\begin{figure}[t]
+\centering
+\resizebox{\columnwidth}{!}{%
+\begin{tikzpicture}[node distance=4mm and 6mm,
+  box/.style={draw, rounded corners, align=center, font=\footnotesize, minimum height=8mm, inner sep=3pt},
+  arr/.style={-{Stealth[length=2mm]}, thick}]
+  \node[box] (parse) {Parse\\nodes};
+  \node[box, right=of parse] (pack) {Pack\\blocks};
+  \node[box, right=of pack] (gen) {Prompt,\\generate};
+  \node[box, below=7mm of gen] (val) {Parse output,\\validate};
+  \node[box, left=of val] (sel) {Keep best,\\assemble};
+  \node[box, below=6mm of val] (rec) {Recovery:\\one retry};
+  \draw[arr] (parse) -- (pack);
+  \draw[arr] (pack) -- (gen);
+  \draw[arr] (gen) -- (val);
+  \draw[arr] (val) -- node[above, font=\scriptsize]{ok} (sel);
+  \draw[arr] (val) -- node[right, font=\scriptsize]{failure} (rec);
+  \draw[arr] (rec.east) -- ++(9mm,0) |- node[right, pos=0.3, font=\scriptsize, inner sep=2pt]{changed input} (gen.east);
+  \draw[arr] (rec.west) -| node[left, pos=0.75, font=\scriptsize, inner sep=2pt]{candidate} (sel.south);
+\end{tikzpicture}}
+\caption{Document pipeline with one recovery round. At inference the pipeline reads only the source text.}
+\label{fig:pipeline}
+\end{figure}
+
+Figure~\ref{fig:pipeline} summarises the \texttt{docmt} pipeline, written as one module per step so that each step can be changed and measured alone.
+
+\paragraph{Parse and pack.}
+A rule-based parser turns a Markdown document into \emph{nodes} (headings, article and clause labels, paragraphs, table cells, signature blocks) such that concatenating the nodes reproduces the source exactly.
+In an earlier version we compared three packings (Section~\ref{sec:results}): one node per request, up to 8 neighbouring nodes (at most 768 source tokens) joined with marker tokens, and the same grouping joined only by newlines.
+The submitted version (``legal prose blocks'') first merges adjacent translatable prose nodes of the same scope (headings, articles, clauses, points, list items, paragraphs) into one block, and closes a block once it exceeds 768 source tokens or 8 nodes and its last node ends with a full stop.
+A new article or a new chapter or section heading starts a new block, a title chain may join the article that follows it, and tables and signature blocks stay separate units.
+Each block is one translation unit and its output is not required to map line by line onto the source nodes, so no line-count check is applied to prose; instead, every source span must be covered exactly once.
+
+\paragraph{Validate and recover.}
+Each output is checked for source-span coverage, preserved headings and numbered labels (treating \vi{đ} and \texttt{dd} as the same label), and unfinished generation (no end-of-sequence before the budget, or a detected repetition loop).
+A unit with such a failure gets \emph{one} recovery round with a changed input.
+After a lost label the prompt adds an instruction to keep the source labels; after a VI$\to$EN unit ran to its budget the earlier (legacy) budget is used; after a repetition loop the repetition penalty is 1.15 \citep{keskar2019ctrl}.
+The best translation obtained is kept; a document with unresolved units is still output but flagged, and a span for which the model returns nothing keeps the source text, also flagged, so no content is silently dropped.
+
+\paragraph{Decoding and runtime.}
+Decoding is greedy in fp16.
+The output budget depends on direction, $\max(256,\lceil 2.5s\rceil{+}128)$ tokens for EN$\to$VI prose and $\max(256,\lceil 1.25s\rceil{+}128)$ for VI$\to$EN prose, where $s$ is the source length; Vietnamese references need about 1.5$\times$ more tokens than English.
+Requests are batched by length to reduce padding, and the batch size (8 or 16) is calibrated on each GPU.
+In an earlier comparison with the same A1 model, data, budgets and batch size 8, scheduling requests by length cut the public-test wall time of the whole job from 12{,}473 s to 8{,}080 s ($-$35.2\%), with BLEU changing by $-$0.01 (EN$\to$VI) and $+$0.05 (VI$\to$EN).
+
+\paragraph{Anti-repetition.}
+A GPU-side detector checks the generated tokens every 32 decoding steps and aborts a degenerate generation early; an aborted unit counts as unfinished and goes to the recovery round above \citep{holtzman2020curious}.
+The first pass uses no repetition penalty.
+With the same v33 adapter and software environment (single runs), a first-pass penalty of 1.05 scored 70.28 / 47.40 BLEU and 1.0 scored 70.87 / 47.44, so we use no penalty in the first pass; the difference comes from one run per setting and has no confidence interval.

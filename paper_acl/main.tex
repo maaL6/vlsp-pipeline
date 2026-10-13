@@ -1,0 +1,54 @@
+% main.tex chỉ chứa \input; mỗi người sửa file riêng trong sections/.
+% Biên dịch: pdflatex main && bibtex main && pdflatex main && pdflatex main (hoặc Overleaf, pdfLaTeX).
+% Style: ACL (acl.sty). Đổi [review] <-> bỏ option để chuyển bản ẩn danh / bản cuối.
+\documentclass[11pt]{article}
+\usepackage[review]{acl}
+
+\usepackage{times}
+\usepackage{latexsym}
+\usepackage[T5,T1]{fontenc}   % T5 cho tiếng Việt (chỉ dùng trong \vi{...}); T1 là mặc định
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}          % cung cấp font T5
+\usepackage{microtype}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{tikz}
+\usetikzlibrary{positioning,arrows.meta}
+
+% Chữ tiếng Việt: luôn bọc trong \vi{...}
+\newcommand{\vi}[1]{{\fontencoding{T5}\fontfamily{lmr}\selectfont #1}}
+\newcommand{\texttvi}[1]{{\fontencoding{T5}\fontfamily{lmtt}\selectfont #1}}
+% Đánh dấu chỗ cần đồng bộ với người khác (xoá trước khi nộp)
+\newcommand{\todo}[1]{\textcolor{red}{[TODO: \vi{#1}]}}
+\usepackage{xcolor}
+
+\title{TODO Title: Structure-Aware Document-Level EN$\leftrightarrow$VI Legal Translation\\with a Fine-Tuned 1.8B Model}
+
+% Tác giả (bản cuối). Ở chế độ [review], acl.sty tự ẩn.
+\author{Pham Thi Khanh Linh \\ \texttt{TODO} \And
+        Nguyen Thi Hien Trang \\ \texttt{TODO} \And
+        TODO (L\^am) \\ \texttt{TODO}}
+
+\begin{document}
+\maketitle
+
+\input{sections/abstract}          % Trang
+\input{sections/introduction}      % Linh
+\input{sections/related_work}      % Trang
+\input{sections/data}              % Linh
+\input{sections/method}            % Trang  (mục "System" trong dàn ý, đổi tên thành Method)
+\input{sections/setup}             % Linh
+\input{sections/results}           % Linh
+\input{sections/conclusion}        % Linh
+
+\section*{Acknowledgments}
+\todo{nhắc người thứ ba làm Hydra (nếu bài có nhắc tới) --- hỏi Linh tên/cách ghi}
+
+\bibliography{refs}
+
+\appendix
+\input{sections/appendix}          % Trang (sau References)
+
+\end{document}

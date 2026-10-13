@@ -1,0 +1,57 @@
+% Người phụ trách: TRANG. (~1 trang). Nguồn: Trang_ban_giao_610/{TOP_ERRORS,MODEL_OR_RUNTIME}.md,
+% vlsp-pipeline/reports/direction_gap_assessment_20261005.md, v13_detailed_assessment.md, HYMT2_V33 README mục 8.
+% LƯU Ý: review 06/10 làm trên bản pipeline trung gian ("v3"), không phải bản nộp cuối (FAST16 + v33).
+\section{Error Analysis}
+\label{sec:errors}
+
+\paragraph{Scope.}
+We read 24 high-risk units and 12 unflagged units chosen by a fixed rule, and scanned all 100 document--direction pairs for lost article headings, on an intermediate pipeline version (6 October, not the submitted system); severity labels are ours, not a legal expert's, and the counts are not error rates.
+Of the 24 flagged units, 5 were critical, 4 major, 9 minor and 6 only false alarms; of the 12 unflagged ones, 1 had a major terminology error, so the validator misses some meaning errors (Table~\ref{tab:errors}).
+
+\begin{table*}[t]
+\centering\small
+\begin{tabular}{p{2.5cm}p{5.5cm}p{3.0cm}p{3.2cm}}
+\toprule
+Error & Evidence & Cause & Proposed fix \\
+\midrule
+Lost article / clause after a long upper-case heading &
+7 of 2{,}561 article headings lost over 100 pairs; model emits the heading, then EOS after 23--30 tokens &
+runtime (unit packing) + model &
+heading as separate node; missing article as hard failure \\
+Silent truncation of a unit &
+one unit 493$\to$108 tokens, Article 26 absent, no hard flag &
+parser: \vi{``kỹ thuật số.''} read as the abbreviation \vi{``Số.''}, so \vi{``Điều 26''} was merged into the previous line &
+parser fix; length-ratio check \\
+Dotted form fields &
+\vi{``Cấp tại \ldots\ldots''} produces a loop until abort at 96/256 tokens, three fields lost; retry with the same prompt gives the same output under greedy decoding &
+model + runtime &
+mask dot runs ($\ge$4) before translation \\
+Inverted or dropped legal terms &
+\vi{``vùng công bố dịch''} $\to$ \emph{epidemic-free zone}; \vi{``cùng cha khác mẹ''} $\to$ \emph{common stepfather}; \vi{``do lỗi''} drops \emph{fault} &
+model; also present in an earlier baseline run &
+verified glossary (see text) \\
+\bottomrule
+\end{tabular}
+\caption{Error types in the manual review, by cause (examples in Appendix~\ref{app:examples}).}
+\label{tab:errors}
+\end{table*}
+
+\paragraph{Model, runtime or parser?}
+Most structural losses were not knowledge failures of the model: they came from a heading followed by early EOS, or from a parser merge that hid a heading from the validator.
+The pipeline already has a protected-heading check and a recovery round that changes the input; the proposed fixes in Table~\ref{tab:errors} (separate heading nodes, length-ratio check, dot masking) were derived from this review and are not claimed as evaluated.
+Re-sending the \emph{same} prompt after a no-EOS failure cannot help under greedy decoding, so recovery must change the input.
+Term inversions appeared in both pipeline versions we compared and are model-level errors.
+
+\paragraph{Glossary hints are not a cheap fix.}
+In the earlier pipeline version, injecting 368 train-derived pairs (up to four per request) changed BLEU by $+0.07$ EN$\to$VI (not significant) and $-0.36$ VI$\to$EN (95\% document bootstrap interval of the paired difference $[-0.65,-0.11]$), and added 8.5\% (EN$\to$VI) and 14.7\% (VI$\to$EN) recovery requests relative to the length-batching run; hints sometimes pulled in an unrelated sense (a visa heading became ``laissez-passer''), so terms need verified, context-aware entries.
+
+\paragraph{Dotted leaders.}
+VI$\to$EN output on form-heavy documents is sensitive to runs of dots.
+Deleting runs of four or more dots from the English output changed 4 of 50 files and raised BLEU by $+1.04$ for A1 and $+0.90$ for v33 (47.40$\to$48.30), entirely from forms.
+The gain is confined to a few documents and assumes that hidden references also drop the dots (true for 7 of 7 public-test documents containing them), so we treat it as an experiment (Section~\ref{sec:results}); the submitted system does not apply it.
+
+\paragraph{Why EN$\to$VI scores higher.}
+With the same pipeline (A1, marker-free packing), EN$\to$VI reaches 68.90 BLEU against 46.62 for VI$\to$EN, but chrF is 83.39 against 79.17, so the BLEU gap of 22 points overstates the difference.
+Unigram precision falls from 93.0\% to 78.3\% and 4-gram precision from 58.1\% to 28.6\%, which is consistent with more lexical and word-order variation on the English side (e.g.\ ``Basing upon'' vs.\ ``Pursuant to''); we could not separate valid paraphrase from error without human review.
+The 13a tokenizer does not segment Vietnamese words, so each syllable counts as a token, which also makes the two scales non-comparable.
+Dropping the two documents with suspected source--reference scope mismatch (\texttt{Quyen\_dan\_su/390}, whose Vietnamese side is twice as long, and \texttt{Vi\_pham\_hanh\_chinh/419}) leaves the gap at 22.7 points, so mismatch is not the main cause.

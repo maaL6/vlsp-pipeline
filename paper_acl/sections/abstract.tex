@@ -1,0 +1,9 @@
+% Người phụ trách: TRANG. Viết/chỉnh sau khi Linh xong Results (số liệu lấy từ đó).
+% TODO(nhóm): chốt "claim" của bài (dàn ý yêu cầu). Câu dưới chỉ nêu điều có số liệu chống lưng.
+\begin{abstract}
+We describe our system for the VLSP 2026 shared task on English$\leftrightarrow$Vietnamese legal machine translation, where whole Markdown documents are translated by a model of fewer than 3B parameters that runs locally without external APIs, and inference time and memory are also evaluated.
+We fine-tune Hy-MT2-1.8B with LoRA on segment-level legal data and run it inside a structure-aware document pipeline: Markdown is parsed into nodes, prose is packed into blocks without marker tokens, outputs are checked for lost headings, labels, uncovered source and unfinished generations, and failed units get one recovery pass with a changed input.
+On the 50-document public test, an earlier version of the pipeline gains $+1.2$ (EN$\to$VI) and $+1.4$ (VI$\to$EN) BLEU by packing neighbouring nodes into one request instead of translating nodes one by one.
+A second LoRA stage on our v3.3 data adds $+1.15$ BLEU EN$\to$VI (95\% interval excludes 0) and $+0.67$ VI$\to$EN (interval includes 0); these are single runs, the A1 baseline ran under a different PyTorch version, and the two adapters score about equally on a held-out internal test.
+The submitted system reaches 70.87 / 47.44 BLEU on the public test; these scores may be optimistic because 72 terminology rows of v3.3 were taken from the public references.
+\end{abstract}

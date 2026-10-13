@@ -1,0 +1,18 @@
+% Người phụ trách: TRANG. Ngắn (~0,4 trang). Không nhắc VLSP 2025 (đề y tế, không liên quan) -- theo comment trong dàn ý.
+\section{Related Work}
+\label{sec:related}
+
+\paragraph{Small LLMs for translation.}
+Recent open translation models are decoder-only LLMs adapted to translation, from the two-stage fine-tuning of ALMA \citep{xu2024alma} and the continued pre-training and instruction tuning of Tower \citep{alves2024tower} to the Chinese- and English-centric NiuTrans.LMT suite \citep{luo2025lmt} and the Hunyuan family \citep{zheng2025hunyuanmt}.
+We build on Hy-MT2, whose 1.8B variant covers 33 languages and is reported by its authors to compete with commercial APIs overall \citep{zheng2026hymt2}.
+Encoder-decoder systems such as NLLB \citep{nllb2022} cover many languages but do not take instructions, so they cannot use prompt-based terminology hints.
+
+\paragraph{English--Vietnamese translation.}
+Large public English--Vietnamese resources are sentence-level corpora: PhoMT \citep{doan2021phomt} (about 3M sentence pairs) and MTet \citep{ngo2022mtet} (4.2M training pairs and a multi-domain test set), the latter with the EnViT5 models.
+They do not provide structured legal documents, so we build segment-level legal training data instead (Section~\ref{sec:data}).
+
+\paragraph{Document-level and legal translation.}
+Context-aware NMT showed that sentence-level systems are inconsistent in deixis, ellipsis and lexical cohesion \citep{voita2019good}, and surveys cover the resulting model families \citep{maruf2019survey}; LLMs have been studied as document-level translators \citep{wang2023document}.
+Recent legal translation work adapts pretrained models to legal text, e.g.\ QLoRA fine-tuning of IndicTrans2 on the JUST-NLP 2025 legal corpus \citep{singh2025indictrans} and domain-specific fine-tuning of an open-weight LLM on EU legislation \citep{lorini2026eu}.
+Our setting differs in that the unit is a whole Markdown document whose headings, article numbers and list labels must survive translation, so we treat structure preservation and failure recovery as part of the translation system rather than as post-editing.
+We also guard against degenerate repetition, a known failure of likelihood-based decoding \citep{holtzman2020curious}, and use a repetition penalty \citep{keskar2019ctrl} only in a retry path.

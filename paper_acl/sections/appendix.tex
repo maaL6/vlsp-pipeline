@@ -1,0 +1,57 @@
+% Người phụ trách: TRANG. Đặt SAU References (đã khai báo ở main.tex).
+\section{Prompts}
+\label{app:prompts}
+Both prompts are the ones used in the A1 training script, sent as the user turn of the Hy-MT2 chat template; \texttt{\{src\}} is the unit text and \texttt{\{tgt\}} is ``English'' or ``Vietnamese''.
+Inference always uses the default prompt.
+\par\vspace{1.4em}
+\begin{small}
+\noindent\textbf{Default.}\\
+\texttt{Translate the following text into \{tgt\}. Note that you should only output the translated result without any additional explanation:\textbackslash n\textbackslash n\{src\}}
+
+\vspace{1.4em}
+\noindent\textbf{With terminology (training only).}\\
+\texttt{Reference the following translations:\textbackslash n\{refs\}\textbackslash n\textbackslash nTranslate the following text into \{tgt\}. Note that you must ONLY output the translated result without any additional explanation:\textbackslash n\textbackslash n\{src\}}
+
+\smallskip\noindent Each line of \texttt{\{refs\}} is ``\emph{source term} translates to \emph{target term}'', with at most eight pairs.
+\end{small}
+
+\section{Hyper-parameters}
+\label{app:hyper}
+\begin{table}[t]
+\centering\small
+\begin{tabular}{@{}lp{4.2cm}@{}}
+\toprule
+\multicolumn{2}{l}{\textit{LoRA fine-tuning (A1, then v33)}}\\
+\midrule
+Base model & Hy-MT2-1.8B (fixed revision) \\
+Adapter & $r{=}64$, $\alpha{=}128$, dropout 0.05 \\
+Target modules & q, k, v, o, gate, up, down \\
+Trainable parameters & 77.6M (4.15\%) \\
+Data & A1: 53.5k pairs; v33: 82{,}203 \\
+Learning rate & A1 $2{\times}10^{-4}$; v33 $5{\times}10^{-5}$ \\
+Schedule (v33) & cosine to 10\%, 25 warm-up \\
+Epochs & 1 (v33: 2{,}569 steps) \\
+Batch & $1\times16\times2$ GPUs $=32$ \\
+Precision, max length & fp16 DDP, 3{,}072 tokens \\
+Weight decay, clip & 0.0, 1.0 \\
+Seed, hardware & 42, Kaggle 2$\times$T4 \\
+\midrule
+\multicolumn{2}{l}{\textit{Inference (submitted setting)}}\\
+\midrule
+Decoding & greedy, fp16, penalty 1.0 \\
+Recovery & one round; penalty 1.15 after a loop \\
+Prose block & closed after 768 tokens or 8 nodes, at a full stop \\
+Output budget & EN$\to$VI $2.5s{+}128$; VI$\to$EN $1.25s{+}128$ \\
+Batch size & 8 (calibrated from 8/16) \\
+Context limit & 8{,}192 tokens \\
+Post-processing & none \\
+\bottomrule
+\end{tabular}
+\caption{Training and inference settings. $s$ is the source token count; budgets have a floor of 256.}
+\label{tab:hyper}
+\end{table}
+
+\begingroup\raggedright
+\noindent Adapter checksum (SHA-256): {\small\texttt{30b5fc68a31c3de3\allowbreak d722a6dee5484aaf\allowbreak 98c4f6b9d7b41fb5\allowbreak 5ac70f6d23a3ba89}}.\\
+\noindent Base model revision: {\small\texttt{9a341cd1b679d3ef\allowbreak d23b46e847b01745\allowbreak a71ed792}}.
+\par\endgroup

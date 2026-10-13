@@ -1,0 +1,13 @@
+% Người phụ trách: LINH. (~1,5 trang) -- file giữ chỗ. Method/Error analysis/Abstract của Trang tham chiếu \ref{sec:results}.
+% Số có sẵn (public test, 50 doc x 2 chiều), để Linh đối chiếu với bản mình dùng:
+%  - Pipeline A/B/C (A1): EN-VI 68.70/68.90/67.69, VI-EN 46.37/46.62/45.23 ; B-C = +1.21/+1.39 (CI không chứa 0)
+%  - FAST16: A1 69.13/46.73 ; v33 70.28/47.40 (rp 1.05) ; delta +1.15 [+0.75,+1.62] / +0.67 [-0.17,+1.79]
+%  - Bản nộp (v33, rp 1.0, batch 8, không hậu xử lý): 70.87/47.44 (run/kout/scores.json)
+%  - Hậu xử lý xoá chuỗi chấm VI-EN: A1 +1.04, v33 +0.90 (47.40 -> 48.30)
+%  - Chi phí: EN-VI 4.54h vs VI-EN 2.87h (B v1.1) ; length batching -21% ; recovery FAST16 840/3739 (EN-VI), 1515/4601 (VI-EN)
+%  - Chi phí (nhắc Linh, đề chấm cả thời gian và bộ nhớ): VRAM đỉnh: lấy từ kernel_status.json của run nộp (số 4.55/4.17 GiB người review nêu CHƯA được mình kiểm); EN-VI tốn thời gian hơn vì reference VI dài 1.57x token so với EN
+%  - Điểm private 60.4 (README gói FINAL): chưa rõ metric -> hỏi Lâm/Vanh trước khi đưa vào bài
+%  - Mọi số v33 trên public test: gắn chú thích '72 dòng term lấy từ reference public (rò nhẹ)'
+\section{Results}
+\label{sec:results}
+\todo{Linh viết}
