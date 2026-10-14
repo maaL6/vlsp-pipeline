@@ -58,9 +58,11 @@ Image chạy một dịch vụ HTTP: `POST /translate` nhận một tài liệu 
 dịch từ văn bản (nguồn tiếng Việt → `vi-en`, ngược lại `en-vi`). `GET /health` trả 200 khi model đã nạp.
 Model nằm trong image, chạy offline, không gọi API ngoài.
 
+Build từ đúng thư mục repo này (chỉ cần Docker, NVIDIA Container Toolkit và internet; không cần cài Python/torch ngoài máy):
+
 ```bash
-python tools/merge_adapter.py --adapter ADAPTER_DIR --out models/hy_mt_merged   # cần có trước khi build
-docker build -t hy-mt-vlsp26 .                       # image đầy đủ, đã gồm model
+mkdir adapter && cp /đường/dẫn/adapter_model.safetensors /đường/dẫn/adapter_config.json adapter/   # adapter không nằm trong git
+tools/build_image.sh                                 # build runtime -> merge adapter + Hy-MT2-1.8B trên GPU -> build image đầy đủ
 docker run --rm --gpus all -p 8000:8000 hy-mt-vlsp26
 ./translate.sh localhost:8000 input.md output.md     # HOST:PORT, file vào, file ra; in thống kê (giây, từ/giây, GPU)
 ```

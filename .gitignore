@@ -27,3 +27,4 @@ paper/*.blg
 # Kaggle staging
 kaggle/build/
 dist/
+adapter/
