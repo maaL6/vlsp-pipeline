@@ -67,6 +67,8 @@ mkdir adapter && cp /đường/dẫn/adapter_model.safetensors /đường/dẫn/
 tools/build_image.sh                                 # build runtime -> merge adapter + Hy-MT2-1.8B trên GPU -> build image đầy đủ
 docker run --rm --gpus all -p 8000:8000 hy-mt-vlsp26
 ./translate.sh localhost:8000 input.md output.md     # HOST:PORT, file vào, file ra; in thống kê (giây, từ/giây, GPU)
+./translate.sh localhost:8000 dataset/private_test/private_test_input.csv results.csv   # private test CSV -> CSV nộp
+# hoặc không cần HTTP: docker run --rm --gpus all -v $PWD/dataset/private_test:/in:ro -v $PWD/out:/out hy-mt-vlsp26 --csv /in/private_test_input.csv --out /out/results.csv
 ```
 
 `translate.sh` đợi dịch vụ sẵn sàng (tối đa `WAIT_SECONDS`, mặc định 1800 giây). `docker build --target runtime`

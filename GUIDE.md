@@ -53,6 +53,23 @@ bit nên **hash khác không có nghĩa là lỗi**. Tiêu chí đúng/sai là c
 
 ## 4. Chạy và sử dụng
 
+**Private test (1 file CSV vào, 1 file CSV ra):** `dataset/private_test/private_test_input.csv` (cột `sample_id, category, source_language, source_markdown`)
+thành file nộp `results.csv` (cột `sample_id, direction, translation`, đúng thứ tự, đủ mọi dòng; `en` → `en-vi`, `vi` → `vi-en`).
+Tài liệu nào lỗi hai lần thì chép nguyên văn nguồn (có ghi log) để file nộp luôn đủ dòng.
+
+```bash
+# Cách 1: chạy thẳng, không cần HTTP (khuyến nghị cho cả bộ private, mất nhiều giờ)
+docker run --rm --gpus all -v $PWD/dataset/private_test:/in:ro -v $PWD/out:/out hy-mt-vlsp26 \
+    --csv /in/private_test_input.csv --out /out/results.csv
+# Cách 2: qua dịch vụ HTTP
+docker run -d --name hy --gpus all -p 8000:8000 hy-mt-vlsp26
+./translate.sh localhost:8000 dataset/private_test/private_test_input.csv results.csv
+```
+
+Nén file nộp nếu cần: `zip submission.zip results.csv` (hoặc dùng `tools/build_submission.py` với các thư mục `.md`).
+
+**Một tài liệu Markdown:**
+
 ```bash
 docker run --rm --gpus all -p 8000:8000 hy-mt-vlsp26       # nạp model, log "listening on 0.0.0.0:8000" khi sẵn sàng
 ./translate.sh localhost:8000 input.md output.md           # dịch một tài liệu, in thống kê

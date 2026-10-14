@@ -6,12 +6,18 @@
   POST /translate   body: UTF-8 Markdown document; the direction is detected from the text
                     (override with ?direction=en-vi|vi-en)
                     -> 200 UTF-8 Markdown translation; statistics in the X-* response headers
+  POST /translate_csv  body: private test CSV (sample_id, category, source_language, source_markdown)
+                    -> 200 submission CSV (sample_id, direction, translation), one row per input row
+
+Batch mode without HTTP:  python -m docmt.server --csv private_test_input.csv --out results.csv
 
 Requests are served one at a time (one GPU). Nothing leaves the machine: the model is loaded from MODEL_DIR.
 """
 from __future__ import annotations
 
 import argparse
+import csv
+import io
 import json
 import os
 import signal
@@ -67,6 +73,43 @@ class Translator:
                         "peak_vram_bytes": peak}
 
 
+SOURCE_DIRECTION = {"en": "en-vi", "vi": "vi-en"}
+SUBMISSION_COLUMNS = ["sample_id", "direction", "translation"]
+
+
+def translate_csv(translator: Translator, text: str, log=print) -> str:
+    """Private test CSV in, submission CSV out (same order, every row). A document that fails twice is copied
+    unchanged (and reported) so the submission is always complete."""
+    csv.field_size_limit(100_000_000)
+    rows = list(csv.DictReader(io.StringIO(text, newline="")))
+    for column in ("sample_id", "source_language", "source_markdown"):
+        if not rows or column not in rows[0]:
+            raise ValueError(f"CSV must have the columns sample_id, source_language, source_markdown (missing {column})")
+    buffer = io.StringIO(newline="")
+    writer = csv.DictWriter(buffer, fieldnames=SUBMISSION_COLUMNS, quoting=csv.QUOTE_ALL)
+    writer.writeheader()
+    started = time.monotonic()
+    for index, row in enumerate(rows, 1):
+        direction = SOURCE_DIRECTION.get(row["source_language"].strip().lower())
+        if direction is None:
+            raise ValueError(f"row {index} ({row['sample_id']}): source_language must be en or vi")
+        translation = None
+        for attempt in (1, 2):
+            try:
+                translation, info = translator.translate(row["source_markdown"], direction)
+                log(f"[csv] {index}/{len(rows)} {row['sample_id']} {direction} {info['seconds']}s "
+                    f"{info['words_per_second']} words/s")
+                break
+            except Exception as exc:
+                log(f"[csv] {index}/{len(rows)} {row['sample_id']} attempt {attempt} failed: {exc!r}")
+        if translation is None:
+            log(f"[csv] {row['sample_id']}: copied the source unchanged")
+            translation = row["source_markdown"]
+        writer.writerow(dict(sample_id=row["sample_id"], direction=direction, translation=translation))
+    log(f"[csv] {len(rows)} documents in {time.monotonic() - started:.0f}s")
+    return buffer.getvalue()
+
+
 def make_handler(translator: Translator):
     class Handler(BaseHTTPRequestHandler):
         protocol_version = "HTTP/1.1"
@@ -92,8 +135,16 @@ def make_handler(translator: Translator):
 
         def do_POST(self):
             url = urlparse(self.path)
+            if url.path == "/translate_csv":
+                length = int(self.headers.get("Content-Length") or 0)
+                try:
+                    result = translate_csv(translator, self.rfile.read(length).decode("utf-8-sig"),
+                                           log=lambda m: print(m, flush=True))
+                except (UnicodeDecodeError, ValueError, csv.Error) as exc:
+                    return self._error(400, str(exc))
+                return self._send(200, result.encode("utf-8"), "text/csv; charset=utf-8")
             if url.path != "/translate":
-                return self._error(404, "use POST /translate or GET /health")
+                return self._error(404, "use POST /translate, POST /translate_csv or GET /health")
             direction = (parse_qs(url.query).get("direction") or [None])[0]
             if direction not in (None, "en-vi", "vi-en"):
                 return self._error(400, "direction must be en-vi or vi-en")
@@ -152,10 +203,20 @@ def main() -> int:
     ap.add_argument("--config", default=os.environ.get("CONFIG", str(ROOT / "configs" / "hy_mt_vlsp26.json")))
     ap.add_argument("--host", default=os.environ.get("HOST", "0.0.0.0"))
     ap.add_argument("--port", type=int, default=int(os.environ.get("PORT", "8000")))
+    ap.add_argument("--csv", type=Path, help="batch mode: translate this private test CSV and exit (needs --out)")
+    ap.add_argument("--out", type=Path, help="batch mode: where to write the submission CSV")
     args = ap.parse_args()
+    if bool(args.csv) != bool(args.out):
+        ap.error("--csv and --out go together")
     signal.signal(signal.SIGTERM, lambda *_: sys.exit(0))  # docker stop: as PID 1 the process would otherwise ignore SIGTERM
     print(f"[server] loading model from {args.model} ...", flush=True)
     translator = build_translator(args.model, args.tokenizer or str(Path(args.model) / "tokenizer.json"), args.config)
+    if args.csv:
+        result = translate_csv(translator, args.csv.read_bytes().decode("utf-8-sig"), log=lambda m: print(m, flush=True))
+        args.out.parent.mkdir(parents=True, exist_ok=True)
+        args.out.write_bytes(result.encode("utf-8"))
+        print(f"[server] wrote {args.out}", flush=True)
+        return 0
     serve(translator, args.host, args.port)
     return 0
 

@@ -18,7 +18,9 @@ Hy-MT2 VLSP26 document-level legal MT (EN<->VI), self-contained and offline.
 
   docker load -i image.tar
   docker run --rm --gpus all -p 8000:8000 $IMAGE        # model loads at start; GET /health is 200 when ready
-  ./translate.sh HOST:PORT INPUT.md OUTPUT.md            # e.g. ./translate.sh localhost:8000 in.md out.md
+  ./translate.sh HOST:PORT INPUT.md OUTPUT.md            # one document, e.g. ./translate.sh localhost:8000 in.md out.md
+  ./translate.sh HOST:PORT private_test.csv results.csv  # private test CSV -> submission CSV (sample_id,direction,translation)
+  # or without HTTP: docker run --rm --gpus all -v IN_DIR:/in:ro -v OUT_DIR:/out $IMAGE --csv /in/private_test.csv --out /out/results.csv
 
 translate.sh posts the document to http://HOST:PORT/translate, detects the direction from the text,
 writes the UTF-8 Markdown translation and prints statistics (seconds, words/second, peak GPU memory).
