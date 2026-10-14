@@ -1,13 +1,16 @@
-# Hy-MT2 VLSP26 translation pipeline: folder of .md in, folder of .md out.
+# Hy-MT2 VLSP26 translation service: POST a Markdown document to /translate, get the translation back.
 #
 # Two targets:
-#   full     (default) model baked in; needs models/hy_mt_merged in the build context (tools/merge_adapter.py)
+#   full     (default) model baked in, works offline; needs models/hy_mt_merged in the build context
+#            (python tools/merge_adapter.py --adapter ADAPTER_DIR --out models/hy_mt_merged)
 #   runtime  no weights; mount the merged model at /models/hy_mt_merged
 #
 #   docker build -t hy-mt-vlsp26 .                      # full image
-#   docker build --target runtime -t hy-mt-vlsp26 .     # without weights
-#   docker run --rm --gpus all -v /path/in:/input:ro -v /path/out:/output hy-mt-vlsp26 /input /output en-vi
-#   (runtime image: add  -v /path/to/models:/models:ro )
+#   docker run --rm --gpus all -p 8000:8000 hy-mt-vlsp26
+#   ./translate.sh localhost:8000 input.md output.md
+#
+# Folder mode (no service):  docker run --rm --gpus all --entrypoint /app/run.sh \
+#   -v /path/in:/input:ro -v /path/out:/output hy-mt-vlsp26 /input /output en-vi
 FROM nvidia/cuda:12.8.1-cudnn-runtime-ubuntu24.04 AS runtime
 
 ENV DEBIAN_FRONTEND=noninteractive PYTHONUNBUFFERED=1 PYTHONIOENCODING=utf-8 TOKENIZERS_PARALLELISM=false
@@ -24,10 +27,12 @@ RUN pip install --no-cache-dir torch --index-url https://download.pytorch.org/wh
 COPY docmt ./docmt
 COPY configs ./configs
 COPY tools ./tools
-COPY run.sh ./run.sh
-RUN chmod +x run.sh
+COPY run.sh translate.sh ./
+RUN chmod +x run.sh translate.sh
 
-ENTRYPOINT ["/app/run.sh"]
+ENV HOST=0.0.0.0 PORT=8000
+EXPOSE 8000
+ENTRYPOINT ["python", "-m", "docmt.server"]
 
 FROM runtime AS full
 ENV HF_HUB_OFFLINE=1

@@ -52,16 +52,37 @@ MODEL=models/hy_mt_merged ./run.sh work/sources/vi work/out/en vi-en
 python tools/build_submission.py --en-vi work/out/vi --vi-en work/out/en --out submission.zip
 ```
 
-## Docker
+## Docker (dịch vụ HTTP theo yêu cầu cuộc thi)
+
+Image chạy một dịch vụ HTTP: `POST /translate` nhận một tài liệu Markdown UTF-8 và trả bản dịch, tự nhận chiều
+dịch từ văn bản (nguồn tiếng Việt → `vi-en`, ngược lại `en-vi`). `GET /health` trả 200 khi model đã nạp.
+Model nằm trong image, chạy offline, không gọi API ngoài.
 
 ```bash
 python tools/merge_adapter.py --adapter ADAPTER_DIR --out models/hy_mt_merged   # cần có trước khi build
-docker build -t hy-mt-vlsp26 .                       # image đầy đủ, đã gồm model (offline)
-docker run --rm --gpus all -v /path/in:/input:ro -v /path/out:/output hy-mt-vlsp26 /input /output en-vi
+docker build -t hy-mt-vlsp26 .                       # image đầy đủ, đã gồm model
+docker run --rm --gpus all -p 8000:8000 hy-mt-vlsp26
+./translate.sh localhost:8000 input.md output.md     # HOST:PORT, file vào, file ra; in thống kê (giây, từ/giây, GPU)
 ```
 
-`docker build --target runtime` tạo image không có weights; khi đó mount model vào `/models/hy_mt_merged`
-(`-v /path/models:/models:ro`). Entry point là `run.sh`; chạy cần NVIDIA Container Toolkit (`--gpus all`).
+`translate.sh` đợi dịch vụ sẵn sàng (tối đa `WAIT_SECONDS`, mặc định 1800 giây). `docker build --target runtime`
+tạo image không có weights (mount model vào `/models/hy_mt_merged`). Chạy theo thư mục `.md` thay vì dịch vụ:
+`docker run --rm --gpus all --entrypoint /app/run.sh -v IN:/input:ro -v OUT:/output hy-mt-vlsp26 /input /output en-vi`.
+Cần NVIDIA Container Toolkit (`--gpus all`).
+
+## Nộp bài (VLSP 2026 MT)
+
+Theo trang cuộc thi, bài nộp là image Docker tự chứa chạy offline cùng script bash
+`translate.sh HOST:PORT INPUT OUTPUT`; đóng gói thành một file nén, kèm MD5, đặt trên Google Drive/OneDrive
+(bật quyền tải). Chỉ bản nộp cuối được chấm.
+
+```bash
+tools/package_docker.sh hy-mt-vlsp26 dist      # dist/hy-mt-vlsp26.tar.gz (image.tar + translate.sh + README.txt) và file .md5
+```
+
+Điền form nộp: Team name, Method name, Method description, Project URL (link tải archive trên), Publication URL
+(link bài báo). Model 1,8B tham số (dưới giới hạn 3B). Kết quả tự động trên private test còn có thể nộp
+lên AIHub dưới dạng `results.csv` (xem *Tạo submission*).
 
 ## Cấu hình
 
@@ -95,7 +116,7 @@ Luồng một tài liệu (chỉ đọc phía nguồn, không bao giờ đọc r
 
 Hạ tầng: `engine/` (`doc_job.py` điều phối một tài liệu, `run.py`, `scheduler.py`, `api.py`), `core/`
 (kiểu dữ liệu, config, tokenizer, normalize, hashing), `inputs/sources.py`, `tracing/` (trace, status, cache),
-`cli.py` (lệnh `run-dir`).
+`cli.py` (lệnh `run-dir`), `server.py` (dịch vụ HTTP của image Docker).
 
 ## Chạy trên Kaggle (private test, T4 x2)
 
@@ -126,6 +147,7 @@ Adapter cần có sha256 `30b5fc68…`; kernel dừng nếu khác. CSV private m
 | `score_public.py` | Chấm BLEU/chrF trên public test (`dataset/public_test/en-vi-public_test.csv`) |
 | `calibrate_batch.py` | Đo throughput GPU để chọn batch 8 hoặc 16 |
 | `merge_adapter.py` | Merge LoRA adapter vào Hy-MT2-1.8B |
+| `package_docker.sh` | Đóng gói image + `translate.sh` thành archive kèm MD5 để nộp |
 | `export_sources.py` | Tách CSV private thành thư mục `.md` làm input cho `run.sh` |
 
 ## Tạo submission

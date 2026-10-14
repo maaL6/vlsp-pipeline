@@ -10,3 +10,4 @@ docs/
 **/*.pyc
 *.work/
 submission.zip
+dist/
