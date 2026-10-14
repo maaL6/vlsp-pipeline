@@ -153,6 +153,7 @@ Adapter cần có sha256 `30b5fc68…`; kernel dừng nếu khác. CSV private m
 | `score_public.py` | Chấm BLEU/chrF trên public test (`dataset/public_test/en-vi-public_test.csv`) |
 | `calibrate_batch.py` | Đo throughput GPU để chọn batch 8 hoặc 16 |
 | `merge_adapter.py` | Merge LoRA adapter vào Hy-MT2-1.8B |
+| `compare_csv.py` | So một CSV kết quả với CSV mong đợi (số dòng trùng, chrF); dùng cho demo trong `examples/` |
 | `package_docker.sh` | Đóng gói image + `translate.sh` thành archive kèm MD5 để nộp |
 | `export_sources.py` | Tách CSV private thành thư mục `.md` làm input cho `run.sh` |
 

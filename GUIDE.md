@@ -1,5 +1,30 @@
 # Hướng dẫn: build, chạy, nộp Docker image (VLSP 2026 MT)
 
+## Tóm tắt: build, chạy, demo (máy Linux có GPU, Docker, NVIDIA Container Toolkit, internet)
+
+```bash
+git clone https://github.com/maaL6/vlsp-pipeline && cd vlsp-pipeline
+gh auth login                                  # để tải adapter từ release adapter-v1 (hoặc tự đặt file vào adapter/)
+tools/build_image.sh                           # merge adapter + build image hy-mt-vlsp26 (có sẵn model, chạy offline)
+
+# Demo nhanh: 4 tài liệu private ngắn (2 en, 2 vi), mất vài phút
+mkdir -p out
+docker run --rm --gpus all -v $PWD/examples:/in:ro -v $PWD/out:/out hy-mt-vlsp26 --csv /in/demo_input.csv --out /out/demo_results.csv
+pip install sacrebleu
+python3 tools/compare_csv.py out/demo_results.csv examples/demo_expected_kaggle.csv --min-chrf 90    # PASS nếu khớp bản Kaggle
+
+# Chạy thật toàn bộ private test (nhiều giờ)
+docker run --rm --gpus all -v $PWD/dataset/private_test:/in:ro -v $PWD/out:/out hy-mt-vlsp26 --csv /in/private_test_input.csv --out /out/results.csv
+
+# Đóng gói nộp (archive + MD5), rồi upload lên Drive/OneDrive và điền form
+tools/package_docker.sh hy-mt-vlsp26 dist
+```
+
+`examples/demo_input.csv` là 4 tài liệu private ngắn nhất; `examples/demo_expected_kaggle.csv` là bản dịch tương ứng của lượt Kaggle penalty100.
+Kỳ vọng: không dòng nào rỗng và chrF so với bản Kaggle cao (nhiều dòng trùng từng byte; có thể lệch nhẹ do khác phiên bản torch/GPU).
+Cũng chạy được qua HTTP: `docker run -d --gpus all -p 8000:8000 hy-mt-vlsp26` rồi `./translate.sh localhost:8000 examples/demo_input.csv out/demo_results.csv`.
+Chi tiết từng bước bên dưới.
+
 ## 1. Đề bài yêu cầu gì, image được dùng ra sao
 
 Theo trang cuộc thi (<https://vlsp.org.vn/vlsp2026/eval/mt_challenge>), bài nộp gồm:
