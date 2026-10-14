@@ -43,6 +43,15 @@ python -m docmt run-dir --input-dir IN --output-dir OUT --direction en-vi ^
 `failed` hoặc thiếu output. Biến môi trường của `run.sh`: `MODEL`, `TOKENIZER`, `CONFIG`, `RUN_ID`, `WORK_DIR`,
 `PYTHON`, `BACKEND`. `--set key=value` ghi đè một trường của config.
 
+## Chạy private test trên máy local (cần GPU)
+
+```bash
+python tools/export_sources.py --out work/sources          # dataset/private_test -> work/sources/{en,vi}/*.md
+MODEL=models/hy_mt_merged ./run.sh work/sources/en work/out/vi en-vi
+MODEL=models/hy_mt_merged ./run.sh work/sources/vi work/out/en vi-en
+python tools/build_submission.py --en-vi work/out/vi --vi-en work/out/en --out submission.zip
+```
+
 ## Docker
 
 ```bash
@@ -116,6 +125,7 @@ Adapter cần có sha256 `30b5fc68…`; kernel dừng nếu khác. CSV private m
 | `score_public.py` | Chấm BLEU/chrF trên public test (`dataset/public_test/en-vi-public_test.csv`) |
 | `calibrate_batch.py` | Đo throughput GPU để chọn batch 8 hoặc 16 |
 | `merge_adapter.py` | Merge LoRA adapter vào Hy-MT2-1.8B |
+| `export_sources.py` | Tách CSV private thành thư mục `.md` làm input cho `run.sh` |
 
 ## Tạo submission
 
