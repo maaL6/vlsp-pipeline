@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Build the complete Docker image from this repo folder alone (needs Docker + NVIDIA Container Toolkit + internet).
 #
-#   1. put the LoRA adapter in adapter/   (adapter_model.safetensors + adapter_config.json)
+#   1. put the LoRA adapter in adapter/   (adapter_model.safetensors + adapter_config.json);
+#      if adapter/ is missing and `gh` is logged in, it is downloaded from the adapter-v1 release
 #   2. tools/build_image.sh [IMAGE]       default IMAGE: hy-mt-vlsp26
 #
 # Steps: build the runtime image -> merge adapter + base model inside it (GPU) into models/hy_mt_merged
@@ -9,6 +10,9 @@
 set -euo pipefail
 IMAGE="${1:-hy-mt-vlsp26}"
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
+if [ ! -f adapter/adapter_model.safetensors ] && command -v gh >/dev/null; then
+  gh release download adapter-v1 -R maaL6/vlsp-pipeline -D adapter --clobber
+fi
 [ -f adapter/adapter_model.safetensors ] && [ -f adapter/adapter_config.json ] \
   || { echo "put adapter_model.safetensors and adapter_config.json in $(pwd)/adapter/" >&2; exit 1; }
 

@@ -1,5 +1,7 @@
 # vlsp-pipeline — dịch tài liệu Markdown EN↔VI (VLSP 2026)
 
+Hướng dẫn build/chạy/nộp Docker image: [GUIDE.md](GUIDE.md).
+
 Pipeline dịch tài liệu pháp lý Markdown EN→VI và VI→EN bằng Hy-MT2-1.8B + LoRA adapter (đã merge).
 Mỗi bước xử lý nằm trong một file riêng (`docmt/steps/`).
 
