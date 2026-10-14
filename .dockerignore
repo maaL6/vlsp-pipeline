@@ -1,5 +1,6 @@
 .git
-models/
+models/*
+!models/hy_mt_merged
 paper/
 tests/
 kaggle/

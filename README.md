@@ -55,12 +55,13 @@ python tools/build_submission.py --en-vi work/out/vi --vi-en work/out/en --out s
 ## Docker
 
 ```bash
-docker build -t hy-mt-vlsp26 .
-docker run --rm --gpus all -v /path/to/models:/models:ro -v /path/in:/input:ro -v /path/out:/output \
-    hy-mt-vlsp26 /input /output en-vi
+python tools/merge_adapter.py --adapter ADAPTER_DIR --out models/hy_mt_merged   # cần có trước khi build
+docker build -t hy-mt-vlsp26 .                       # image đầy đủ, đã gồm model (offline)
+docker run --rm --gpus all -v /path/in:/input:ro -v /path/out:/output hy-mt-vlsp26 /input /output en-vi
 ```
 
-`/models/hy_mt_merged` phải chứa model đã merge (weights không nằm trong image). Entry point là `run.sh`.
+`docker build --target runtime` tạo image không có weights; khi đó mount model vào `/models/hy_mt_merged`
+(`-v /path/models:/models:ro`). Entry point là `run.sh`; chạy cần NVIDIA Container Toolkit (`--gpus all`).
 
 ## Cấu hình
 

@@ -1,11 +1,14 @@
 # Hy-MT2 VLSP26 translation pipeline: folder of .md in, folder of .md out.
 #
-#   docker build -t hy-mt-vlsp26 .
-#   docker run --rm --gpus all -v /path/to/models:/models:ro -v /path/in:/input:ro -v /path/out:/output \
-#       hy-mt-vlsp26 /input /output en-vi            # or vi-en
+# Two targets:
+#   full     (default) model baked in; needs models/hy_mt_merged in the build context (tools/merge_adapter.py)
+#   runtime  no weights; mount the merged model at /models/hy_mt_merged
 #
-# /models/hy_mt_merged must hold the merged model (see tools/merge_adapter.py); weights are not baked into the image.
-FROM nvidia/cuda:12.8.1-cudnn-runtime-ubuntu24.04
+#   docker build -t hy-mt-vlsp26 .                      # full image
+#   docker build --target runtime -t hy-mt-vlsp26 .     # without weights
+#   docker run --rm --gpus all -v /path/in:/input:ro -v /path/out:/output hy-mt-vlsp26 /input /output en-vi
+#   (runtime image: add  -v /path/to/models:/models:ro )
+FROM nvidia/cuda:12.8.1-cudnn-runtime-ubuntu24.04 AS runtime
 
 ENV DEBIAN_FRONTEND=noninteractive PYTHONUNBUFFERED=1 PYTHONIOENCODING=utf-8 TOKENIZERS_PARALLELISM=false
 RUN apt-get update && apt-get install -y --no-install-recommends python3 python3-venv python3-pip bash \
@@ -25,3 +28,7 @@ COPY run.sh ./run.sh
 RUN chmod +x run.sh
 
 ENTRYPOINT ["/app/run.sh"]
+
+FROM runtime AS full
+ENV HF_HUB_OFFLINE=1
+COPY models/hy_mt_merged /models/hy_mt_merged
