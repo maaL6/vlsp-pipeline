@@ -1,7 +1,6 @@
 """Generation backends: GenRequest list -> GenResult list.
 
 - hf:       transformers AutoModelForCausalLM, padded batch generate (torch imported lazily).
-- mock:     deterministic scripted fake for tests (echo + injectable faults).
 
 Operational problems (network, OOM) are retried/counted here and never mixed with the
 quality-recovery round of the runtime: `stats` = {"op_retries", "op_errors", "oom"}.
@@ -13,7 +12,7 @@ import time
 
 from ..core.datatypes import GenResult
 
-BACKENDS = ("hf", "mock")
+BACKENDS = ("hf",)
 
 class Backend:
     """Base class.
@@ -21,7 +20,7 @@ class Backend:
     `batching` tells the runtime scheduler how to dispatch:
       True  -> one generate() call at a time with up to batch_size requests (padded HF batch);
       False -> single-request generate() calls, up to batch_size of them in parallel threads
-               (llama.cpp server slots, mock).
+               (single-request backends).
     """
 
     name = "base"

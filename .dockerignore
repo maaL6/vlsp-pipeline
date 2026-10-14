@@ -1,0 +1,11 @@
+.git
+models/
+paper/
+tests/
+kaggle/
+dataset/
+docs/
+**/__pycache__
+**/*.pyc
+*.work/
+submission.zip

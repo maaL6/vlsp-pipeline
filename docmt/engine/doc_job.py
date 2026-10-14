@@ -54,11 +54,6 @@ _SOURCES = {
     "marker_namespace": ("docmt.steps.s03_pack", "marker_namespace"),
     "check_unit": ("docmt.steps.s07_validate_unit", "check_unit"),
     "check_document": ("docmt.steps.s10_doc_check", "check_document"),
-    "SourceIndex": ("docmt.context.source_index", "SourceIndex"),
-    "Memory": ("docmt.context.memory", "Memory"),
-    "Glossary": ("docmt.context.glossary", "Glossary"),
-    "select_evidence": ("docmt.context.evidence", "select_evidence"),
-    "render_background": ("docmt.context.evidence", "render_background"),
 }
 
 class Components:

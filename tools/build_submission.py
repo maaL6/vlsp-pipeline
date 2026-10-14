@@ -11,6 +11,9 @@ from pathlib import Path, PurePosixPath
 
 
 COLUMNS = ["sample_id", "direction", "translation"]
+# A private test input (one source language per ID) also works as template: en -> en-vi, vi -> vi-en.
+INPUT_COLUMNS = ["sample_id", "category", "source_language", "source_markdown"]
+SOURCE_DIRECTION = {"en": "en-vi", "vi": "vi-en"}
 
 
 def build_submission(template: Path, roots: dict[str, Path], out: Path) -> int:
@@ -20,12 +23,14 @@ def build_submission(template: Path, roots: dict[str, Path], out: Path) -> int:
     # The template supplies required keys and ordering, never translation content.
     with template.open(encoding="utf-8-sig", newline="") as source:
         reader = csv.DictReader(source)
-        if reader.fieldnames != COLUMNS:
-            raise ValueError(f"Template columns must be: {','.join(COLUMNS)}")
+        from_input = reader.fieldnames == INPUT_COLUMNS
+        if reader.fieldnames != COLUMNS and not from_input:
+            raise ValueError(f"Template columns must be: {','.join(COLUMNS)} (or the private input columns)")
         for line, row in enumerate(reader, start=2):
-            if None in row or any(row.get(column) is None for column in COLUMNS):
+            if None in row or any(row.get(column) is None for column in (INPUT_COLUMNS if from_input else COLUMNS)):
                 raise ValueError(f"Malformed CSV record {line}")
-            sid, direction = row["sample_id"], row["direction"]
+            sid = row["sample_id"]
+            direction = SOURCE_DIRECTION.get(row["source_language"].strip().lower(), "") if from_input else row["direction"]
             key = (sid, direction)
             if direction not in ("en-vi", "vi-en"):
                 raise ValueError(f"Invalid direction for {sid!r}: {direction!r}")
@@ -71,7 +76,7 @@ def build_submission(template: Path, roots: dict[str, Path], out: Path) -> int:
 
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--template", type=Path, default=Path("dataset/sample_submission/results.csv"))
+    parser.add_argument("--template", type=Path, default=Path("dataset/private_test/private_test_input.csv"))
     parser.add_argument("--en-vi", type=Path, help="Directory containing Vietnamese output .md files")
     parser.add_argument("--vi-en", type=Path, help="Directory containing English output .md files")
     parser.add_argument("--out", type=Path, default=Path("submission.zip"))

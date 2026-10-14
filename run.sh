@@ -11,7 +11,7 @@
 #   RUN_ID     run id written to logs                                        [final_<direction>_<UTC time>]
 #   WORK_DIR   logs/traces/cache (not part of the output)                    [OUTPUT_DIR.work]
 #   PYTHON     interpreter with torch+CUDA, transformers>=5.6, tokenizers    [python3]
-#   BACKEND    hf (GPU) | mock (install check only: echoes the source, NOT a translation)  [hf]
+#   BACKEND    hf (GPU)                                                      [hf]
 # Exit code != 0 when a document failed or a prediction is missing (see WORK_DIR/logs).
 set -euo pipefail
 if [ $# -ne 3 ]; then sed -n '2,15p' "$0"; exit 2; fi

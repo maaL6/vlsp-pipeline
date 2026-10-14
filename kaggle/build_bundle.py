@@ -4,6 +4,7 @@
 
 Layout written to --out (must not exist yet):
   pipeline-v1/{docmt,configs,run.sh,requirements.txt}   code of this repo
+  tools/build_submission.py                              the kernel writes submission.zip with it
   calibration/{en-vi,vi-en}/config.json                  per-direction run config (batch 8)
   data/private_test_input.csv                            the private test input (sample_id, category, source_language, source_markdown)
   run_spec.json                                          kaggle/run_spec.json with git_head and csv_md5 filled in
@@ -53,6 +54,8 @@ def main() -> int:
     copy_tree(REPO / "configs", pipe / "configs")
     for name in ("run.sh", "requirements.txt"):
         shutil.copyfile(REPO / name, pipe / name)
+    (out / "tools").mkdir()
+    shutil.copyfile(REPO / "tools" / "build_submission.py", out / "tools" / "build_submission.py")
     copy_tree(KAGGLE / "calibration", out / "calibration")
     (out / "data").mkdir()
     shutil.copyfile(args.csv, out / "data" / "private_test_input.csv")

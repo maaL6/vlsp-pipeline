@@ -130,10 +130,16 @@ def run_phase(phase,pipe,model,spec):
 def finalize():
  STATUS['utc_finished']=datetime.datetime.now(datetime.timezone.utc).isoformat();STATUS['total_wall_seconds']=round(time.monotonic()-START,3);save()
  (W/'RESULTS_README.md').write_text('Hy-MT2 legal prose blocks, FP16 greedy. Batch calibrated separately per GPU from 8/16, padded token allowance cap32768. Source soft768, context8192/ceiling16384. Context/glossary/history off; no old cache. Exact source span coverage, headings/labels checked; no target line-count requirement inside prose blocks. Degenerate token loops can abort early but are incomplete and must recover; any remaining nonempty best-effort document is retained with unresolved diagnostics, never labeled complete. Empty spans retain source as a flagged last resort. CPU audit and automatic metrics are not human legal review.\n')
+ # Ready-to-upload submission.zip (never fails the run).
+ try:
+  r=subprocess.run([sys.executable,str(W/'code/tools/build_submission.py'),'--template',str(W/'code/data/private_test_input.csv'),
+   '--en-vi',str(W/'predictions_private/vi'),'--vi-en',str(W/'predictions_private/en'),'--out',str(W/'submission.zip')],capture_output=True,text=True)
+  log('submission: '+(r.stdout+r.stderr).strip())
+ except Exception as e:log('submission skipped: '+repr(e))
  # Exclude copied code/sources and GPU-installed packages; preserve all logs and predictions.
  with zipfile.ZipFile(W/'results.zip','w',zipfile.ZIP_DEFLATED) as z:
   for p in sorted(W.rglob('*')):
-   if not p.is_file() or p.name=='results.zip' or p.relative_to(W).parts[0] in ('code','sources','smoke_sources','runtime_deps','merged'):continue
+   if not p.is_file() or p.name in ('results.zip','submission.zip') or p.relative_to(W).parts[0] in ('code','sources','smoke_sources','runtime_deps','merged'):continue
    z.write(p,p.relative_to(W).as_posix())
 def calibrate(pipe,model,spec):
  processes=[];root=W/'calibration';root.mkdir()

@@ -10,7 +10,7 @@ class RunConfig:
     run_id: str = "TO_FILL"
     branch: str = "hy_mt_vlsp26"
     owner: str = "Lam"
-    backend: str = "hf"                  # "hf" | "mock"
+    backend: str = "hf"
     model: str = ""                      # HF model dir (hf backend)
     model_sha256: str = ""
     tokenizer_path: str = ""
@@ -76,9 +76,6 @@ class RunConfig:
 # Branch presets: change one component per ablation (contract section 2).
 BRANCHES = {
     "hy_mt_vlsp26": dict(source_context=False, soft_glossary=False, target_history=False),
-    "hy_mt_source_context": dict(source_context=True, soft_glossary=False, target_history=False),
-    "hy_mt_source_context_glossary": dict(source_context=True, soft_glossary=True, target_history=False),
-    "hy_mt_source_context_history": dict(source_context=True, soft_glossary=False, target_history=True),
 }
 
 def make_config(branch: str, **overrides) -> RunConfig:
