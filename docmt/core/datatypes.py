@@ -1,5 +1,4 @@
-"""Shared data types. Every module of lam_docmt exchanges these objects (see SPEC.md)."""
-# Split from lam_docmt/types.py (statements verbatim; tools/split_from_lam_docmt.py).
+"""Shared data types. Every module exchanges these objects."""
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
@@ -38,7 +37,7 @@ class Node:
     scope_id: str = "main"       # "main" | "attachment_1" | "appendix_1" | "quote_3" ...
     path: list = field(default_factory=list)       # e.g. ["Chapter II", "Article 6", "1."]
     confidence: float = 1.0      # parser confidence in `kind`
-    protected: dict = field(default_factory=dict)  # see SPEC.md "Protected items"
+    protected: dict = field(default_factory=dict)
     table: Optional[dict] = None # {"group": "t3", "row": 5, "col": 2, "numeric": False, "certain": False}
     flags: list = field(default_factory=list)      # e.g. ["broken_table", "page_break_join"]
 
@@ -108,7 +107,7 @@ class ParseResult:
 
 @dataclass
 class UnitCheck:
-    hard: list                   # hard failure codes (deterministic, see SPEC.md)
+    hard: list                   # hard failure codes (deterministic)
     warnings: list               # warning codes (heuristic, need review)
     details: dict = field(default_factory=dict)
 

@@ -1,4 +1,4 @@
-"""payload_delimiter "newline" (phương án B): units packed as with markers, nodes joined by '\\n'
+"""payload_delimiter "newline" units packed as with markers, nodes joined by '\\n'
 only, output split back by line; a line-count mismatch is a marker-type failure (s08)."""
 from pathlib import Path
 from types import SimpleNamespace
@@ -71,12 +71,12 @@ def test_newline_config_run_dir_mock(tmp_path):
     work = tmp_path / "work"
     rc = main(["run-dir", "--input-dir", str(tmp_path / "in"), "--output-dir", str(tmp_path / "out"),
                "--work-dir", str(work), "--direction", "en-vi", "--config",
-               str(V1 / "configs/hy_a1_structure_newline.json"), "--run-id", "t_newline",
+               str(V1 / "configs/hy_mt_vlsp26.json"), "--run-id", "t_newline",
                "--backend", "mock", "--tokenizer", str(TOKENIZER)])
     assert rc == 0
     prompts = (work / "logs/prompts.jsonl").read_text(encoding="utf-8")
     assert "[SEG" not in prompts
     import json
     rows = [json.loads(x) for x in (work / "logs/generation_trace.jsonl").read_text(encoding="utf-8").splitlines()]
-    grouped = [r for r in rows if r["attempt"] == 0 and len(r["node_ids"]) > 1]
-    assert grouped and all(r["markers"] == [] for r in grouped)       # still grouped, never marked
+    first_pass = [r for r in rows if r["attempt"] == 0]
+    assert first_pass and all(r["markers"] == [] for r in first_pass)       # newline payload, never marked

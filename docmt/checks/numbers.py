@@ -1,4 +1,3 @@
-"""Split from lam_docmt/validate.py (statements verbatim; tools/split_from_lam_docmt.py)."""
 from __future__ import annotations
 
 import collections
@@ -132,7 +131,7 @@ def number_items(text, lang):
     return items
 
 def number_tokens(text, lang):
-    """Value-normalised multiset of the numbers in `text` (SPEC): grouping per language
+    """Value-normalised multiset of the numbers in `text`: grouping per language
     (1,000,000 en == 1.000.000 vi), decimals (0.5 en == 0,5 vi), zero padding (02 == 2),
     month names (June 03, 1998 ~ ngày 03 tháng 6 năm 1998); clause labels are ignored."""
     return collections.Counter(i.value for i in number_items(text, lang))

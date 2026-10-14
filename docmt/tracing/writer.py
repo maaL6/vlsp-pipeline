@@ -1,10 +1,9 @@
-"""Logs of a run (SPEC section 3, contract section 2/3): trace/status/error/prompt/cache JSONL
+"""Logs of a run: trace/status/error/prompt/cache JSONL
 writers, hashes, environment text, resume cache and the smoke-result table.
 
 Nothing here reads reference/gold text: the smoke table is built from document_status.jsonl and
 generation_trace.jsonl only.
 """
-# Split from lam_docmt/trace.py (statements verbatim; tools/split_from_lam_docmt.py).
 from __future__ import annotations
 
 import json
@@ -13,7 +12,7 @@ from pathlib import Path
 
 from ..core.hashing import read_jsonl, utc_now
 
-# One record per backend request (SPEC section 3 "Trace record").
+# One record per backend request.
 TRACE_KEYS = (
     "run_id", "direction", "doc_id", "scope_id", "unit_id", "unit_kind", "attempt", "parent_unit_id",
     "node_ids", "source_offsets", "raw_source_sha256", "normalized_source", "evidence",
@@ -22,7 +21,7 @@ TRACE_KEYS = (
     "retry_reason", "selected", "seconds", "backend",
 )
 
-# <direction>.run.json (SPEC section 3 "run.json keys").
+# <direction>.run.json keys.
 RUN_KEYS = (
     "run_id", "branch", "owner", "utc_started", "utc_finished", "timezone", "model", "model_sha256",
     "model_provenance", "parameter_count", "tokenizer_sha256", "template", "prompt_style",
@@ -40,7 +39,7 @@ SMOKE_COLUMNS = ("sample_id", "direction", "run_id", "output_path", "source_span
 
 CHECK_VALUES = ("pass", "fail", "needs_review", "not_checked")
 
-TEMPLATE = "hy_a1 chat_template.jinja, add_generation_prompt"
+TEMPLATE = "hy_mt chat_template.jinja, add_generation_prompt"
 
 TIMEZONE = "UTC; team UTC+7"
 

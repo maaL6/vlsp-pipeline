@@ -1,4 +1,4 @@
-"""Document-level runtime (SPEC section 3; draft section 2 "Sinh và phục hồi").
+"""Document-level runtime.
 
 Per document: read raw source -> parse -> split long nodes / pack units -> (SourceIndex) ->
 for each unit an evidence-fitted prompt (drop evidence items, lowest priority first, until
@@ -14,7 +14,6 @@ time inside a document when source context or target history is on. Operational 
 are counted separately from quality recovery. Internal markers never reach a prediction.
 Reference/gold text is never read here: only the source side of a doc-direction is opened.
 """
-# Split from lam_docmt/runtime.py (statements verbatim; tools/split_from_lam_docmt.py).
 from __future__ import annotations
 
 import bisect
@@ -127,6 +126,7 @@ class _Recovery:
     builds: list = field(default_factory=list)
     children: list = field(default_factory=list)
     unfit: list = field(default_factory=list)
+    additional_traces: list = field(default_factory=list)
     skipped: Optional[str] = None
 
 @dataclass
@@ -177,6 +177,11 @@ class _DocJob:
         if not src.strip():
             raise _DocFailure("empty_document")
         self.nodes = list(comp.parse_document(src, self.doc_id, self.item.src_lang, tok))
+        if (cfg.extra or {}).get('legal_prose_blocks'):
+            from ..steps.s02_blocks import coalesce_prose
+            original_count=len(self.nodes)
+            self.nodes=coalesce_prose(self.nodes,tok,cfg)
+            self.flags['prose_nodes_coalesced']=original_count-len(self.nodes)
         self._starts = [n.raw_start for n in self.nodes]
         self._check_roundtrip()
         self.ns = comp.marker_namespace(src)
@@ -292,7 +297,7 @@ class _DocJob:
         render_bg = self.comp.render_background if items else None
         return render_unit_prompt(unit, items, self.item.src_lang, self.item.tgt_lang, self.cfg, render_bg)
 
-    def _build(self, unit, attempt: int, allow_history: bool, parent_id=None, reason=None) -> Optional[_Built]:
+    def _build(self, unit, attempt: int, allow_history: bool, parent_id=None, reason=None, full_budget=False) -> Optional[_Built]:
         cfg, tok = self.cfg, self.tok
         if attempt == 1:
             ok, n_src = recovery_source_tokens(unit, tok, cfg)
@@ -300,8 +305,30 @@ class _DocJob:
                 self.run.log_error(self, {"kind": "recovery_source_cap_exceeded", "unit_id": unit.unit_id,
                                           "source_tokens": n_src, "cap": cfg.recovery_cap})
                 return None
-        fitted = fit_prompt(unit, self._evidence(unit, allow_history), self._render, tok, cfg,
-                            self.comp.output_budget)
+        protected=any(self.nodes_by_id[n].table is not None or self.nodes_by_id[n].kind in
+            ('table_cell','signature','signature_name','broken_table') for n in unit.node_ids)
+        render=self._render
+        if attempt==1 and reason and any(x in reason for x in ('protected_block_label_lost','protected_inline_label_lost')):
+            # One targeted source-only retry: change the instruction rather than
+            # repeating the identical greedy request or editing target prose.
+            from ..steps.s04_prompt import BOS,USER
+            from ..steps.s07_validate_unit import source_sub_labels
+            labels=[]
+            for nid in unit.node_ids:
+                prot=self.nodes_by_id[nid].protected or {}
+                members=prot.get('block_members',[]) or [{'protected':prot}]
+                for member in members:
+                    label=(member.get('protected') or {}).get('label')
+                    if label and str(label) not in labels:labels.append(str(label))
+                for label in source_sub_labels(self.nodes_by_id[nid].payload):
+                    if label not in labels:labels.append(label)
+            if labels:
+                note='Preserve every source clause label exactly, including d, đ, d1 and d2; do not renumber. Source labels: '+', '.join(labels)+'.\n'
+                def render(u,items):
+                    prompt,template=self._render(u,items)
+                    return prompt.replace(BOS+USER,BOS+USER+note,1),template+'+source_label_recovery'
+        fitted = fit_prompt(unit, self._evidence(unit, allow_history), render, tok, cfg,
+                            self.comp.output_budget,tgt_lang=self.item.tgt_lang,protected=protected,full=full_budget)
         if fitted is None:
             return None
         prompt, template, ptoks, budget, items, dropped = fitted
@@ -310,6 +337,10 @@ class _DocJob:
                 "scope_id": unit.scope_id, "unit_id": unit.unit_id, "unit_kind": unit.kind, "attempt": attempt,
                 "parent_unit_id": parent_id, "node_ids": list(unit.node_ids), "markers": list(unit.markers),
                 "payload": unit.payload}
+        meta['prompt_tokens']=ptoks
+        meta['full_output_budget_recovery']=full_budget
+        meta['allow_degenerate_stop']=all(self.nodes_by_id[n].table is None and
+            self.nodes_by_id[n].kind not in ('table_cell','signature','signature_name') for n in unit.node_ids)
         req = GenRequest(request_id=rid, prompt=prompt, max_new_tokens=budget,
                          repetition_penalty=cfg.repetition_penalty, meta=meta)
         self.evidence_counts["items"] += len(items)
@@ -374,12 +405,18 @@ class _DocJob:
             return _Recovery(mode=mode, skipped="recovery_units_error")
         reason = recovery_reason(mode, hard)
         rec = _Recovery(mode=mode, children=kids)
+        full_budget=bool((self.cfg.extra or {}).get('directional_output_budget') and 'no_eos' in hard)
         for c in kids:
-            b = self._build(c, 1, allow_history=False, parent_id=unit.unit_id, reason=reason)
+            b = self._build(c, 1, allow_history=False, parent_id=unit.unit_id, reason=reason,full_budget=full_budget)
             if b is None:
                 rec.unfit.append(c)
             else:
                 rec.builds.append(b)
+        if (self.cfg.extra or {}).get("degeneration_retry") and {"no_eos","degenerate_repetition"} & set(hard):
+            for build in rec.builds:
+                if 'degenerate_repetition' in hard or a0.result.stop_type=='degeneration_abort' or (not (self.cfg.extra or {}).get('directional_output_budget') and build.request.prompt==b0.request.prompt):
+                    build.request=dataclasses.replace(build.request,repetition_penalty=float(
+                        (self.cfg.extra or {}).get("degeneration_repetition_penalty",1.15)))
         if is_identical_retry(kids, rec.builds, b0.request):
             rec.skipped = "identical_prompt"   # greedy decoding would repeat the first pass
             rec.builds = []
@@ -387,13 +424,41 @@ class _DocJob:
         if rec.builds:
             results = yield [b.request for b in rec.builds]
             rec.attempts = [self._evaluate(b, r) for b, r in zip(rec.builds, results)]
+            if (self.cfg.extra or {}).get("degeneration_retry") and (self.cfg.extra or {}).get('degeneration_extra_retry',True):
+                retry=[]
+                for index,(built,attempt) in enumerate(zip(rec.builds,rec.attempts)):
+                    if not ({"no_eos","degenerate_repetition"} & set(attempt.check.hard)):
+                        continue
+                    again=self._build(built.unit,2,allow_history=False,parent_id=unit.unit_id,reason="bounded_degeneration_retry")
+                    if again is not None:
+                        again.request=dataclasses.replace(again.request,repetition_penalty=float((self.cfg.extra or {}).get("degeneration_repetition_penalty",1.15)))
+                        if (again.request.prompt==built.request.prompt and
+                            again.request.max_new_tokens==built.request.max_new_tokens and
+                            again.request.repetition_penalty==built.request.repetition_penalty):
+                            self.flags['identical_degeneration_retry_skipped']+=1
+                            continue
+                        retry.append((index,again))
+                if retry:
+                    self.flags["degeneration_retries"]+=len(retry)
+                    results=yield [b.request for _,b in retry]
+                    for (index,built),result in zip(retry,results):
+                        attempt=self._evaluate(built,result)
+                        previous=rec.attempts[index]
+                        if len(attempt.check.hard)<len(previous.check.hard):
+                            rec.additional_traces.append((previous,rec.builds[index]))
+                            rec.attempts[index]=attempt;rec.builds[index]=built
+                        else:
+                            rec.additional_traces.append((attempt,built))
         return rec
 
     def _unfittable(self, unit) -> _UnitOutcome:
         self.flags["prompt_too_long"] += 1
-        return _UnitOutcome(unit=unit, final={n: "" for n in unit.node_ids}, accepted=False,
+        retain=(self.cfg.extra or {}).get('source_fallback_for_empty')
+        fallback={n:self.nodes_by_id[n].payload if retain else '' for n in unit.node_ids}
+        if retain:self.flags['untranslated_source_fallback']+=len(fallback)
+        return _UnitOutcome(unit=unit, final=fallback, accepted=False,
                             hard=["prompt_too_long"], warnings=[], flags=["prompt_too_long"], chosen="none",
-                            recovery_mode=None, requests=0, recovery_requests=0, empty_nodes=list(unit.node_ids))
+                            recovery_mode=None, requests=0, recovery_requests=0, empty_nodes=[] if retain else list(unit.node_ids))
 
     # ---- selection (step 9: steps/s09_select.py) --------------------------------------------------
     def _select(self, unit, a0, b0, rec: Optional[_Recovery]) -> _UnitOutcome:
@@ -404,6 +469,13 @@ class _DocJob:
         chosen, flags = choose_candidate(c0, c1, rec.skipped if rec is not None else None)
         other = c1 if chosen is c0 else c0
         final, empty, used, node_flags = fill_nodes(unit, chosen, other)
+        if empty and (self.cfg.extra or {}).get('source_fallback_for_empty'):
+            for nid in list(empty):
+                source=self.nodes_by_id[nid].payload
+                if source.strip():
+                    final[nid]=source;empty.remove(nid)
+                    node_flags.append('untranslated_source_fallback:'+nid)
+                    chosen.hard=list(chosen.hard)+['untranslated_source_fallback:'+nid]
         flags += node_flags
         accepted = is_accepted(chosen, empty)
         if accepted and self.memory is not None:
@@ -415,6 +487,14 @@ class _DocJob:
         builds = [b0] + (list(rec.builds) if rec is not None else [])
         for a, b in zip([a0] + rec_attempts, builds):
             self._trace(a, b, a.request.request_id in used)
+        extra_attempts=list(rec.additional_traces) if rec is not None else []
+        for a,b in extra_attempts:
+            self._trace(a,b,False)
+        if (self.cfg.extra or {}).get("reject_selected_limit") and any(
+            a.request.request_id in used and not a.result.eos for a in [a0]+rec_attempts):
+            accepted=False
+            if "no_eos" not in chosen.hard:
+                chosen.hard=list(chosen.hard)+["no_eos"]
         op_error = "operational_error" in chosen.hard or any(
             "operational_error" in a.check.hard for a in [a0] + rec_attempts if a.request.request_id in used)
         for f in flags:
@@ -422,7 +502,7 @@ class _DocJob:
         return _UnitOutcome(unit=unit, final=final, accepted=accepted, hard=list(chosen.hard),
                             warnings=list(chosen.warnings), flags=flags, chosen=chosen.name,
                             recovery_mode=rec.mode if rec is not None else None,
-                            requests=1 + len(rec_attempts), recovery_requests=len(rec_attempts),
+                            requests=1 + len(rec_attempts) + len(extra_attempts), recovery_requests=len(rec_attempts) + len(extra_attempts),
                             empty_nodes=empty, op_error=op_error)
 
     def _trace(self, a: Attempt, b: _Built, selected: bool):
@@ -486,14 +566,45 @@ class _DocJob:
             self.validator_ok = False
             self.run.log_error(self, {"kind": "check_document_error", "error": repr(exc)})
             doc_check = {"error": repr(exc)}
+        if (cfg.extra or {}).get("reject_selected_limit") and any("no_eos" in o.hard for o in outcomes):
+            doc_hard.append("selected_output_limit_unresolved")
         doc_hard += [str(h) for h in (doc_check.get("hard") or doc_check.get("hard_failures") or [])]
         doc_hard = _dedupe(doc_hard)
         op_error = any(o.op_error for o in outcomes)
         status, error = decide_status(op_error, out_text, unresolved_units, empty_work, self.uncovered, doc_hard)
+        if status=='failed' and out_text.strip() and (cfg.extra or {}).get('retain_best_effort_documents'):
+            self.flags['best_effort_document_retained']+=1
+            status='completed_with_unresolved'
+            error=error or 'best_effort_document_has_unresolved_units'
+        if status=='completed_with_unresolved' and (cfg.extra or {}).get('retain_best_effort_documents') and self.run.writer.logs_dir is not None:
+            import json
+            relative=Path(item.rel_output)
+            if relative.is_absolute() or '..' in relative.parts:
+                relative=Path(sha256_text(self.doc_id)[:12]+'_'+relative.name)
+            diagnostic=self.run.writer.logs_dir/'unresolved_documents'/relative.with_suffix('.diagnostics.json')
+            diagnostic.parent.mkdir(parents=True,exist_ok=True)
+            diagnostic.write_text(json.dumps({'status':status,'best_effort_not_complete':True,
+                'source_sha256':sha256_text(self.src),'doc_hard':doc_hard,
+                'unresolved_spans':[{'unit_id':o.unit.unit_id,'source_span':[o.unit.raw_start,o.unit.raw_end],
+                    'hard':o.hard,'flags':o.flags} for o in unresolved_units]},ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
         out_path = item.output_path
         if out_path is not None:
             out_path = Path(out_path)
             if status == "failed":
+                if (cfg.extra or {}).get('preserve_failed_diagnostics') and self.run.writer.logs_dir is not None:
+                    # Keep useful text and exact bad spans outside predictions; never score as a valid translation.
+                    relative=Path(item.rel_output)
+                    if relative.is_absolute() or '..' in relative.parts:
+                        relative=Path(sha256_text(self.doc_id)[:12]+'_'+relative.name)
+                    diagnostic=self.run.writer.logs_dir/'failed_documents'/relative
+                    diagnostic.parent.mkdir(parents=True,exist_ok=True)
+                    diagnostic.write_text(out_text,encoding='utf-8',newline='')
+                    import json
+                    diagnostic.with_suffix('.diagnostics.json').write_text(json.dumps({
+                        'status':'failed','not_a_prediction':True,'source_sha256':sha256_text(self.src),
+                        'doc_hard':doc_hard,'unresolved_spans':[{'unit_id':o.unit.unit_id,
+                            'source_span':[o.unit.raw_start,o.unit.raw_end],'hard':o.hard} for o in unresolved_units]},
+                        ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
                 if out_path.exists():
                     out_path.unlink()  # never leave a stale prediction behind a failed document
             else:

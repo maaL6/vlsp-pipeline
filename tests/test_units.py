@@ -1,4 +1,4 @@
-"""Tests for the unit steps (s03 split/pack, s05 budget, s06 parse_output, s08 recovery; was lam_docmt/units.py) (packing, splitting, markers, payload, parse_output, budget, recovery).
+"""Tests for the unit steps (s03 split/pack, s05 budget, s06 parse_output, s08 recovery) (packing, splitting, markers, payload, parse_output, budget, recovery).
 
 Nodes are built by hand (factory below) or from SOURCE docs with a crude test-only paragraph
 splitter; parse.py is only used by the optional integration test at the end."""
@@ -13,7 +13,7 @@ from types import SimpleNamespace
 
 from docmt.steps import s03_pack, s03_split, s05_budget, s06_parse_output, s08_recovery
 
-# lam_docmt.units was split into these step modules; the tests keep their `U.<name>` spelling.
+# The unit steps live in these step modules; the tests address them as `U.<name>`.
 U = SimpleNamespace(**{n: getattr(m, n) for m in (s03_split, s03_pack, s05_budget, s06_parse_output, s08_recovery)
                        for n in dir(m) if not n.startswith("__")})
 from docmt.core.config import RunConfig
@@ -99,7 +99,7 @@ LIMITS = {"text": (CFG.source_cap, CFG.max_nodes), "table": (CFG.table_cap, CFG.
 
 
 def check_units(units, nodes, src, tok, ns, allow_single=True):
-    """All packing invariants of SPEC section 3 units.py."""
+    """All packing invariants of the unit steps."""
     pos = {n.node_id: i for i, n in enumerate(nodes)}
     trans = [n.node_id for n in nodes if n.translatable]
     sent = [nid for u in units for nid in u.node_ids]

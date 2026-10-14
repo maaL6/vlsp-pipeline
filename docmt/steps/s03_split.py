@@ -1,4 +1,4 @@
-"""Translation units (SPEC section 3, units.py): long-node splitting, packing, markers, payload
+"""Translation units: long-node splitting, packing, markers, payload
 rendering, output parsing, output budget and recovery units.
 
 Works on the SOURCE side only (node payloads); never reads references.
@@ -13,7 +13,6 @@ Integration notes for callers (runtime):
 - `recovery_units(..., independent=False)` may split nodes again (`nX.1.1` ...); the new pieces are
   ADDED to `nodes_by_id` (caller's dict) so check_unit/assembly can look them up.
 """
-# Split from lam_docmt/units.py (statements verbatim; tools/split_from_lam_docmt.py).
 from __future__ import annotations
 
 import re
@@ -35,7 +34,7 @@ _HYPHEN_END = re.compile(r"[^\W\d_]-$")
 _SPACE_RUN = re.compile(r"[ \t]+")
 
 def unwrap(text: str) -> str:
-    """SPEC section 2: soft-wrapped lines joined with one space (no space after a line ending in
+    """Soft-wrapped lines joined with one space (no space after a line ending in
     letter + '-'), runs of spaces collapsed to one, ends stripped."""
     parts = []
     for line in text.split("\n"):
@@ -220,7 +219,37 @@ def _cut_positions(c: str, tok, cap: int):
         start = chosen[0]
     return cuts
 
-def split_node(node: Node, tok, cap: int) -> list:
+def period_boundaries(c: str):
+    """Whitespace after a terminal '.', excluding decimals, labels and abbreviations."""
+    out = []
+    for m in re.finditer(r"\s+", c):
+        a,b=m.span()
+        if a==0 or b>=len(c): continue
+        left=re.search(r"\S+$",c[max(0,a-100):a])
+        right=re.match(r"\S+",c[b:b+100])
+        if not left or not right: continue
+        if left.group(0).rstrip(_CLOSERS).endswith('.') and not _is_glue(c,a,left.group(0),right.group(0)):
+            out.append(b)
+    return out
+
+def ends_at_period(c: str) -> bool:
+    tail=c.rstrip().rstrip(_CLOSERS)
+    token=re.search(r"\S+$",tail)
+    return bool(tail.endswith('.') and token and not _is_abbrev(token.group(0))
+                and not _LABEL.fullmatch(token.group(0)))
+
+def _period_cut_positions(c: str, tok, cap: int):
+    """Soft cap: keep an overlong sentence whole; never fall back to clause/word/char cuts."""
+    boundaries=period_boundaries(c);cuts=[];start=0
+    while not _fits(c,start,len(c),tok,cap):
+        candidates=[b for b in boundaries if b>start]
+        if not candidates:break
+        fitting=[b for b in candidates if _fits(c,start,b,tok,cap)]
+        cut=max(fitting) if fitting else min(candidates)
+        cuts.append((cut,0));start=cut
+    return cuts
+
+def split_node(node: Node, tok, cap: int, *, sentence_only=False) -> list:
     """Split one translatable node into pieces '<id>.1', '<id>.2' ... with payload <= cap tokens.
 
     Cut preference: sentence end ('. ' '; ' ': ' '! ' '? ' before upper-case/digit/quote), then
@@ -229,7 +258,7 @@ def split_node(node: Node, tok, cap: int) -> list:
     reference+number pairs ("Article 5"), inside capitalised name runs. Pieces partition
     content_raw exactly; the first keeps lead (and `protected`), the last keeps trail."""
     c = node.content_raw
-    cuts = _cut_positions(c, tok, cap) if c.strip() else []
+    cuts = (_period_cut_positions(c, tok, cap) if sentence_only else _cut_positions(c, tok, cap)) if c.strip() else []
     if not cuts:
         return [node]
     bounds = [0] + [p for p, _ in cuts] + [len(c)]
@@ -244,6 +273,10 @@ def split_node(node: Node, tok, cap: int) -> list:
         flags = list(node.flags) + ["split_piece"]
         if (j in forced) or (j - 1 in forced):
             flags.append("split_forced")
+        protected=dict(node.protected) if first else {}
+        members=node.protected.get('block_members')
+        if members:
+            protected['block_members']=[m for m in members if (node.raw_start if first else base+a)<=m['raw_start'] < base+b]
         pieces.append(Node(
             node_id=f"{node.node_id}.{j + 1}", kind=node.kind,
             raw_start=node.raw_start if first else base + a,
@@ -251,7 +284,7 @@ def split_node(node: Node, tok, cap: int) -> list:
             lead=node.lead if first else "", content_raw=content, trail=node.trail if last else "",
             payload=payload_of(content), translatable=True, scope_id=node.scope_id,
             path=list(node.path), confidence=node.confidence,
-            protected=dict(node.protected) if first else {},
+            protected=protected,
             table=dict(node.table) if node.table is not None else None, flags=flags))
     return pieces
 
@@ -286,7 +319,7 @@ def split_long_nodes(nodes, tok, cap) -> list:
         if not n.translatable or tok.count(n.payload) <= c:
             out.append(n)
         else:
-            out.extend(split_node(n, tok, c))
+            out.extend(split_node(n, tok, c, sentence_only=bool((getattr(cap,"extra",{}) or {}).get("sentence_only"))))
     return out
 
 # ------------------------------------------------------------------------------------- packing

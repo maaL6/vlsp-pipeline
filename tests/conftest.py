@@ -8,7 +8,7 @@ import pytest
 CODE = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(CODE))
 
-# Test inputs (source-side dev data + HY A1 tokenizer) live outside pipeline-v1:
+# Test inputs (source-side dev data + Hy-MT2 tokenizer) live outside pipeline-v1:
 # default <repo>/task 3-10/CHUNG/inputs, override with DOCMT_TEST_INPUTS=/path/to/inputs.
 INPUTS = Path(os.environ.get("DOCMT_TEST_INPUTS") or CODE.parent / "task 3-10" / "CHUNG" / "inputs")
 if not INPUTS.is_dir():

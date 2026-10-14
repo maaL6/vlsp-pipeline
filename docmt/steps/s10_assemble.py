@@ -6,7 +6,7 @@ Input : parsed nodes (raw layout: lead / content_raw / trail), work nodes (after
 Output: the document text, the translation of every translatable original node, work nodes left
         empty, and how many translatable nodes had no work piece at all.
 
-Rule (SPEC section 2, unchanged): out = "".join(lead + translation-or-copy + trail); a node split
+Rule: out = "".join(lead + translation-or-copy + trail); a node split
 into pieces is its pieces' non-empty translations joined by " " in raw order. Copy nodes
 (numbers, separators, protected names) are written back verbatim.
 

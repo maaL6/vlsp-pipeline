@@ -1,7 +1,6 @@
-"""HY A1 prompts. The rendered string equals hy_a1_tokenizer/chat_template.jinja applied to one user
-turn with add_generation_prompt=True. A1 was SFT-ed on HY_DEFAULT (about 1/3 of rows on HY_TERMS);
-HY_DELIMITER and HY_BACKGROUND come from the Hy-MT2 model card and were not part of A1 SFT."""
-# Split from lam_docmt/prompts.py, lam_docmt/runtime.py (statements verbatim; tools/split_from_lam_docmt.py).
+"""Hy-MT2 prompts. The rendered string equals the model chat_template.jinja applied to one user
+turn with add_generation_prompt=True. The adapter was SFT-ed on HY_DEFAULT (about 1/3 of rows on HY_TERMS);
+HY_DELIMITER and HY_BACKGROUND come from the Hy-MT2 model card and were not part of the adapter SFT."""
 from __future__ import annotations
 
 import re
@@ -52,7 +51,7 @@ def build_user(src: str, tgt_lang: str, style: str = "default", background: str 
 
     - no background, no terms: HY_DEFAULT (style "default") or HY_DELIMITER (style "delimiter",
       only when the payload carries markers; single-node payloads always use HY_DEFAULT).
-    - terms only: HY_TERMS (A1-native terminology format), "<src> translates to <tgt>" lines.
+    - terms only: HY_TERMS (model-native terminology format), "<src> translates to <tgt>" lines.
     - background: HY_BACKGROUND; terms are listed inside the background block; with markers and
       style "delimiter" the delimiter sentence is appended to the instruction.
     """

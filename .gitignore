@@ -5,7 +5,6 @@ hy-mt2-1.8b-trained/
 *.gguf
 *.work/
 delivery/
-train/data/
 # python / tooling
 __pycache__/
 *.pyc
@@ -13,9 +12,17 @@ __pycache__/
 .venv/
 venv/
 .DS_Store
-# kaggle staging / downloaded results
-kaggle/public_test/build/
-kaggle/public_test/results/
-results/v13_kaggle_20261004/
 # generated default AIHub submission
 /submission.zip
+# LaTeX build artifacts (keep .tex and the final .pdf)
+paper/*.aux
+paper/*.fdb_latexmk
+paper/*.fls
+paper/*.log
+paper/*.synctex.gz
+paper/*.out
+paper/*.bbl
+paper/*.blg
+
+# Kaggle staging
+kaggle/build/

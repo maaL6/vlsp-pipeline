@@ -1,0 +1,12 @@
+{
+  "git_head": "",
+  "runtime_version": "vlsp26",
+  "checkpoint": "Hy-MT2-1.8B + LoRA adapter, merged",
+  "weights_file_sha256": "5dc305ae6c33c15a8440a4a8f9183e411004079eb737bc2da417b6a932dead81",
+  "csv_md5": "",
+  "config": "configs/hy_mt_vlsp26.json",
+  "previous_outputs_mounted": false,
+  "reference_used_for_generation": false,
+  "run_id": "vlsp26-private",
+  "note": "private run, batch 8 both directions (calibration fixed), smoke skipped; git_head and csv_md5 are filled by kaggle/build_bundle.py"
+}

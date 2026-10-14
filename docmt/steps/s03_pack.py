@@ -1,11 +1,10 @@
-"""Split from lam_docmt/units.py (statements verbatim; tools/split_from_lam_docmt.py)."""
 from __future__ import annotations
 
 import hashlib
 import re
 
 from ..core.datatypes import Unit
-from .s03_split import _FOLD, _check_partition, _limits, _run_key
+from .s03_split import _FOLD, _check_partition, _limits, _run_key, ends_at_period
 
 MARKER_RE = re.compile(r"\[(SEG[0-9A-F]{0,4})_(\d{6})\]")
 
@@ -61,23 +60,19 @@ def _index_of(marker_str: str) -> int:
 # ------------------------------------------------------------------------- payload delimiter
 # How the nodes of a multi-node unit are separated in the prompt (cfg.extra["payload_delimiter"]):
 #
-#   "marker"  (default, configs/hy_a1_structure.json = phương án A)
+#   "marker"  (default when the key is missing)
 #       [SEG_000010] Pursuant to ...
 #       [SEG_000011] At the request of ...
 #     s06 splits the output on the markers; a lost/extra marker is a hard failure.
 #
-#   "newline" (configs/hy_a1_structure_newline.json = phương án B, chosen 04/10/2026)
+#   "newline" (configs/hy_mt_vlsp26.json)
 #       Pursuant to ...
 #       At the request of ...
-#     Same packing (same caps, same max_nodes), but nodes are joined by '\n' only and s06 maps
-#     output line i -> node i; a different number of non-empty lines is the hard failure
-#     line_count_mismatch. In s08 every failed newline unit (line count or any other hard
-#     failure) is re-sent node by node, since a retry joined by newlines again can be mis-aligned.
-#     Node payloads never contain '\n' (s02 unwraps them), so one node = one line.
-#
-# Public test 50 docs x 2 directions (kaggle/public_test, A1, T4, batch 4): B 68.90 / 46.62 BLEU
-# (en-vi / vi-en) vs A 68.70 / 46.37, and 4.6 h vs 5.5 h per run; one node per request with no
-# grouping (C, configs/hy_a1_structure_nomarker.json) 67.69 / 45.23. See CHANGE_NOTES v1.1.
+#     Nodes are joined by '\n' only and s06 maps output line i -> node i; a different number of
+#     non-empty lines is the hard failure line_count_mismatch. In s08 every failed newline unit
+#     (line count or any other hard failure) is re-sent node by node, since a retry joined by
+#     newlines again can be mis-aligned. Node payloads never contain '\n' (s02 unwraps them),
+#     so one node = one line.
 #
 # Internally a unit sent with "newline" has Unit.markers == [] even when it holds several nodes;
 # that is how render_payload (here) and parse_output (s06) recognise the newline format, so no
@@ -141,6 +136,21 @@ def _greedy(items, count, cap: int, max_n: int):
     if cur:
         yield cur, False
 
+def _period_greedy(items, nodes, count, cap, max_n):
+    """Close text chunks only at sentence periods; node/token limits are soft.
+
+    The final chunk of an actual scope/table/signature boundary is retained whole even if
+    the source ends without a period. Never cross such a source-structure boundary.
+    """
+    current=[]
+    for it in items:
+        candidate=current+[it]
+        if current and (count(candidate)>cap or len(candidate)>max_n) and ends_at_period(nodes[current[-1]].payload):
+            yield current,count(current)>cap
+            current=[]
+        current.append(it)
+    if current:yield current,count(current)>cap
+
 def pack_units(nodes, doc_id, tok, cfg, ns) -> list:
     """Pack translatable nodes (document order) into units.
 
@@ -175,7 +185,12 @@ def pack_units(nodes, doc_id, tok, cfg, ns) -> list:
     units = []
     for kind, positions in runs:
         cap, max_n = _limits(kind, cfg)
-        for group, oversize in _greedy(positions, count, cap, max_n):
+        # A prose block is already an exact source span. Accept its whole translation;
+        # do not ask the model to preserve one line per original parser node.
+        groups = (([p],count([p])>cap) for p in positions) if kind=='text' and (cfg.extra or {}).get('legal_prose_blocks') else (_period_greedy(positions,nodes,count,cap,max_n)
+                  if kind == "text" and (cfg.extra or {}).get("strict_period_packing")
+                  else _greedy(positions,count,cap,max_n))
+        for group, oversize in groups:
             g_nodes = [nodes[p] for p in group]
             marks = unit_markers(ns, group, cfg)
             payload = render_payload(g_nodes, marks)

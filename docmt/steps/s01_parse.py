@@ -1,4 +1,3 @@
-"""Split from lam_docmt/parse.py (statements verbatim; tools/split_from_lam_docmt.py)."""
 from __future__ import annotations
 
 import math
@@ -1000,7 +999,7 @@ def check_partition(src: str, nodes: list) -> list:
 # public API
 # ----------------------------------------------------------------------------------------------
 def parse_document(src: str, doc_id: str, src_lang: str, tok=None) -> list:
-    """Parse one SOURCE document into nodes that partition `src` exactly (see SPEC.md)."""
+    """Parse one SOURCE document into nodes that partition `src` exactly."""
     if src is None or src == "":
         return []
     if not src.strip():

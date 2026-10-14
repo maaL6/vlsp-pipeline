@@ -5,7 +5,7 @@ Input : the first-pass Attempt, and (when the unit went through recovery) the re
 Output: the chosen candidate, per-node final texts, nodes left empty, the request ids whose
         outputs are used, and flags.
 
-Rules (lam_docmt runtime, unchanged):
+Rules:
 - candidate with FEWER hard failures wins; tie or worse keeps the first pass
   (flags recovery_selected / recovery_tie_kept_original / recovery_worse_kept_original);
 - a node incomplete in the chosen candidate is filled from the other candidate when that one is
@@ -33,7 +33,7 @@ def first_candidate(unit, a0) -> _Candidate:
     texts = {}
     for n in unit.node_ids:
         t = (a0.parsed.segments.get(n) or "").strip()
-        texts[n] = (t, bool(t), [a0.request.request_id])
+        texts[n] = (t, bool(t) and bool(a0.result.eos), [a0.request.request_id])
     return _Candidate("first", list(a0.check.hard), list(a0.check.warnings), texts, [a0])
 
 
@@ -45,16 +45,17 @@ def recovery_candidate(unit, attempts, children, n_unfit: int, nodes_by_id) -> _
         for n, t in (a.parsed.segments or {}).items():
             segs[n] = (t or "").strip()
             owner[n] = a.request.request_id
+    eos_by_id={a.request.request_id:bool(a.result.eos) for a in attempts}
     child_nodes = [n for c in children for n in c.node_ids]
     texts = {}
     for x in unit.node_ids:
         if x in segs:
-            texts[x] = (segs[x], bool(segs[x]), [owner[x]])
+            texts[x] = (segs[x], bool(segs[x]) and eos_by_id.get(owner[x],False), [owner[x]])
             continue
         pieces = [n for n in child_nodes if n.startswith(x + ".")]
         pieces.sort(key=lambda n: (nodes_by_id[n].raw_start if n in nodes_by_id else 0))
         parts = [segs.get(p, "") for p in pieces]
-        texts[x] = (" ".join(p for p in parts if p), bool(pieces) and all(parts),
+        texts[x] = (" ".join(p for p in parts if p), bool(pieces) and all(parts) and all(eos_by_id.get(owner.get(p),False) for p in pieces),
                     [owner[p] for p in pieces if p in owner])
     hard = [h for a in attempts for h in a.check.hard] + ["prompt_too_long"] * n_unfit
     warns = [w for a in attempts for w in a.check.warnings]

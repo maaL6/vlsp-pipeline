@@ -1,4 +1,4 @@
-"""Source context, scoped memory and soft glossary (SPEC section 3 "context.py"; draft section 2).
+"""Source context, scoped memory and soft glossary.
 
 Evidence for one unit, in priority order:
   1. title / structural path of the unit              origin source_title, source_path
@@ -15,7 +15,6 @@ Inputs are the SOURCE side of one document, the train glossary and accepted runt
 here reads reference/gold text. No sample id, term, number or article number is hard-coded: every
 rule below is a generic pattern of Vietnamese/English legal drafting.
 """
-# Split from lam_docmt/context.py (statements verbatim; tools/split_from_lam_docmt.py).
 from __future__ import annotations
 
 import re

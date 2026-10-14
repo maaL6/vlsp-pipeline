@@ -38,16 +38,6 @@ python tools/build_submission.py --en-vi OUTPUT_EN_VI --vi-en OUTPUT_VI_EN --out
 Thay `OUTPUT_EN_VI`, `OUTPUT_VI_EN` bằng thư mục output thật. Nếu đường dẫn chứa khoảng trắng,
 đặt trong dấu nháy kép. Lệnh một dòng này dùng được trong PowerShell và Bash.
 
-Ví dụ dùng các bản dịch public test B đã lưu trong repository:
-
-```bash
-python tools/build_submission.py --en-vi results/public_test_20261004/B_gom_node_khong_marker/predictions/en --vi-en results/public_test_20261004/B_gom_node_khong_marker/predictions/vi --out submission.zip
-```
-
-Trong run lịch sử này, thư mục `en`/`vi` được đặt theo **ngôn ngữ nguồn**:
-`predictions/en` chứa bản dịch EN→VI, `predictions/vi` chứa bản dịch VI→EN.
-Ví dụ này đóng gói lại output B đã lưu; để nộp output của một run mới, dùng thư mục của run đó.
-
 ## Chạy với output của docmt run
 
 `docmt run` lưu bản dịch dưới `predictions/<direction>/`. Trỏ tới từng thư mục chiều dịch:

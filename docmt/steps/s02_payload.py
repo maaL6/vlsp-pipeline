@@ -1,4 +1,3 @@
-"""Split from lam_docmt/parse.py (statements verbatim; tools/split_from_lam_docmt.py)."""
 from __future__ import annotations
 
 import re
@@ -6,7 +5,7 @@ import re
 from ..core.text_normalize import normalize
 
 def unwrap(text: str) -> str:
-    """SPEC unwrap: join soft-wrapped lines with one space; a line ending in letter+'-' joins without
+    """Unwrap: join soft-wrapped lines with one space; a line ending in letter+'-' joins without
     space (hyphen kept); collapse internal runs of spaces to one."""
     out = ""
     for line in text.split("\n"):

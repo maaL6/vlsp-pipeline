@@ -1,4 +1,4 @@
-"""HF transformers backend (SPEC section 3).
+"""HF transformers backend.
 
 AutoModelForCausalLM (torch/transformers imported lazily in load()), fp16 on cuda by default, left
 padding, greedy, repetition_penalty; one padded batch generate with max(max_new_tokens). The
@@ -7,13 +7,13 @@ output is cut to its own budget and eos False. CUDA OOM -> halve the batch (pers
 count `oom`; OOM at batch size 1 -> operational error result. parameter_count is counted after
 load (sum of numel over model.parameters(), shared/tied tensors counted once).
 """
-# Split from lam_docmt/backends/hf.py (statements verbatim; tools/split_from_lam_docmt.py).
 from __future__ import annotations
 
 import time
 
 from .base import Backend
 from ..core.datatypes import GenResult
+from .batch_policy import next_chunk,padded_tokens
 
 def postprocess_ids(seq, eos_ids, own_budget: int, pad_id=None):
     """(ids, eos) for one row of a batch generated with max(max_new_tokens) of the batch."""
@@ -43,6 +43,7 @@ class HFBackend(Backend):
         self.device = device or getattr(cfg, "hf_device", "cuda")
         self.dtype_name = dtype or getattr(cfg, "hf_dtype", "float16")
         self.max_batch = int(batch_size or getattr(cfg, "batch_size", 4) or 4)
+        self.max_batch = min(self.max_batch,int((getattr(cfg,'extra',{}) or {}).get('batch_maximum',self.max_batch)))
         self.revision = revision
         self.model = None
         self.tokenizer = None
@@ -99,7 +100,9 @@ class HFBackend(Backend):
         out = {}
         i = 0
         while i < len(reqs):
-            chunk = reqs[i:i + max(1, self.max_batch)]
+            chunk = next_chunk(reqs[i:],self.max_batch,
+                               lambda p:len(self.tokenizer.encode(p,add_special_tokens=False)),
+                               (getattr(self.cfg,'extra',{}) or {}).get('batch_token_cap'))
             for r, res in zip(chunk, self._run_safe(chunk)):
                 out[r.request_id] = res
             i += len(chunk)
@@ -148,22 +151,46 @@ class HFBackend(Backend):
                              add_special_tokens=False).to(self.device)
         plen = enc["input_ids"].shape[1]
         max_new = max(int(r.max_new_tokens) for r in group)
+        stopper=None;extra={}
+        if (getattr(self.cfg,'extra',{}) or {}).get('degeneration_early_stop'):
+            from transformers import StoppingCriteria,StoppingCriteriaList
+            from .degeneration import make_cycle_stopper
+            stopper=make_cycle_stopper(torch,StoppingCriteria,group,enc['input_ids'],plen,self.pad_id,self.eos_ids,
+                interval=int((self.cfg.extra or {}).get('degeneration_check_interval',16)),
+                gpu=(self.cfg.extra or {}).get('degeneration_detector')=='gpu_tensor')
+            extra['stopping_criteria']=StoppingCriteriaList([stopper])
         t0 = time.time()
         with torch.inference_mode():
             out = self.model.generate(**enc, max_new_tokens=max_new, do_sample=False, num_beams=1,
                                       repetition_penalty=rp, pad_token_id=self.pad_id,
                                       eos_token_id=sorted(self.eos_ids), temperature=None,
-                                      top_p=None, top_k=None)
+                                      top_p=None, top_k=None,**extra)
         secs = time.time() - t0
+        flags,detector_profile=stopper.report() if stopper is not None and hasattr(stopper,'report') else (stopper.flagged if stopper else {},None)
         results = []
         for i, r in enumerate(group):
             ids, eos = postprocess_ids(out[i, plen:].tolist(), self.eos_ids, int(r.max_new_tokens), self.pad_id)
+            aborted=i in flags
+            if aborted:eos=False
             text = self.tokenizer.decode(ids, skip_special_tokens=True)
             n_in = int(enc["attention_mask"][i].sum().item())
             results.append(GenResult(request_id=r.request_id, text=text, eos=eos,
-                                     stop_type="eos" if eos else "limit", input_tokens=n_in,
+                                     stop_type="degeneration_abort" if aborted else ("eos" if eos else "limit"), input_tokens=n_in,
                                      output_tokens=len(ids) + (1 if eos else 0),
                                      seconds=round(secs, 3), backend=self.name))
+        if getattr(self, "error_sink", None):
+            lengths = [int(enc["attention_mask"][i].sum().item()) for i in range(len(group))]
+            self.error_sink({"kind": "batch_profile", "seconds": round(secs, 3),
+                "batch_size": len(group), "padded_prompt_tokens": plen,
+                "prompt_tokens": lengths, "max_new_tokens": max_new,
+                "own_budgets": [int(r.max_new_tokens) for r in group],
+                "output_tokens": [r.output_tokens for r in results],
+                "peak_allocated_vram":int(torch.cuda.max_memory_allocated()) if torch.cuda.is_available() else None,
+                "peak_reserved_vram":int(torch.cuda.max_memory_reserved()) if torch.cuda.is_available() else None,
+                "padded_sequence_token_allowance":len(group)*(plen+max_new),
+                "degeneration_aborts":{group[i].request_id:info for i,info in flags.items()},
+                "loop_detector_profile":detector_profile,
+                "request_ids": [r.request_id for r in group]})
         return results
 
     # -- info ----------------------------------------------------------------------------------

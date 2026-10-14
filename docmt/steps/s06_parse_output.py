@@ -1,4 +1,3 @@
-"""Split from lam_docmt/units.py (statements verbatim; tools/split_from_lam_docmt.py)."""
 from __future__ import annotations
 
 import re

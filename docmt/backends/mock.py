@@ -19,7 +19,6 @@ Faults are scripted with rules matched against the request (meta dict, prompt, o
 The backend records every call (meta, prompt, fault), the batches it received and the maximum
 number of in-flight requests globally and per document (scheduling tests).
 """
-# Split from lam_docmt/backends/mock.py (statements verbatim; tools/split_from_lam_docmt.py).
 from __future__ import annotations
 
 import re

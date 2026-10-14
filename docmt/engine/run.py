@@ -1,4 +1,3 @@
-"""Split from lam_docmt/runtime.py (statements verbatim; tools/split_from_lam_docmt.py)."""
 from __future__ import annotations
 
 import concurrent.futures as cf
@@ -11,6 +10,7 @@ from ..core.datatypes import GenResult
 from ..core.hashing import code_sha256, sha256_file, sha256_text
 from .doc_job import _DocJob
 from .scheduler import _Runner
+from ..backends.batch_policy import batch_fits
 from ..tracing.cache import ResumeCache
 from ..tracing.writer import TEMPLATE, TIMEZONE
 
@@ -123,6 +123,35 @@ class _Run:
                         progressed = True
                         while progressed and len(batch) < bs:
                             progressed = False
+                            if (self.cfg.extra or {}).get("length_buckets"):
+                                candidates = []
+                                for runner_index, runner in enumerate(runners):
+                                    if not runner.ready():
+                                        continue
+                                    capacity = (len(runner.waiting) if runner.limit is None
+                                                else max(0, runner.limit - runner.inflight))
+                                    for queue_index, req in enumerate(runner.waiting):
+                                        if queue_index >= capacity:
+                                            break
+                                        prompt_tokens = int((req.meta or {}).get("prompt_tokens") or
+                                                            self.tok.count(req.prompt))
+                                        key = (int(req.max_new_tokens) // 128, prompt_tokens // 128,
+                                               int(req.max_new_tokens), prompt_tokens,
+                                               runner_index, queue_index)
+                                        candidates.append((key, runner, req))
+                                for _, runner, req in sorted(candidates, key=lambda x: x[0])[:bs - len(batch)]:
+                                    if not batch_fits([q for _,q in batch]+[req],self.tok.count,
+                                                      (self.cfg.extra or {}).get('batch_token_cap')):
+                                        break
+                                    runner.waiting.remove(req)
+                                    runner.inflight += 1
+                                    hit = self.lookup(req)
+                                    progressed = True
+                                    if hit is not None:
+                                        runner.deliver(req, hit)
+                                    else:
+                                        batch.append((runner, req))
+                                continue
                             for r in runners:
                                 while len(batch) < bs and r.ready():
                                     req = r.take()

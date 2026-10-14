@@ -1,4 +1,4 @@
-"""pipeline-v1 additions: folder I/O (run-dir), inspect --stop-after, preset JSON, replay backend."""
+"""Folder I/O (run-dir), inspect --stop-after, preset JSON, replay backend."""
 import json
 import shutil
 from pathlib import Path
@@ -35,7 +35,7 @@ def test_run_dir_mock_writes_same_tree(folder, tmp_path):
     src, ids = folder
     out = tmp_path / "out"
     rc = main(["run-dir", "--input-dir", str(src), "--output-dir", str(out), "--direction", "en-vi",
-               "--config", str(V1 / "configs/hy_a1_structure.json"), "--run-id", "t_run_dir",
+               "--config", str(V1 / "configs/hy_mt_vlsp26.json"), "--run-id", "t_run_dir",
                "--backend", "mock", "--tokenizer", str(TOKENIZER)])
     assert rc == 0
     written = sorted(p.relative_to(out).with_suffix("").as_posix() for p in out.rglob("*.md"))
@@ -54,7 +54,7 @@ def test_inspect_stages_are_consistent(tmp_path):
     from docmt.engine.inspect import inspect_items
     from docmt.inputs.sources import expand_rows
     items = expand_rows(read_jsonl(INPUTS / "smoke6_doc_direction_manifest.jsonl"), INPUTS)[:2]
-    cfg, tok = make_config("hy_a1_structure", run_id="t_inspect"), HyTok(TOKENIZER)
+    cfg, tok = make_config("hy_mt_vlsp26", run_id="t_inspect"), HyTok(TOKENIZER)
     stats = {s: inspect_items(items, cfg, tok, s, tmp_path / f"{s}.jsonl") for s in ("parse", "split", "pack", "prompt")}
     assert all(not s["failed"] for s in stats.values())
     assert stats["pack"]["records"] == stats["prompt"]["records"] > 0
@@ -63,10 +63,13 @@ def test_inspect_stages_are_consistent(tmp_path):
     assert all(p["fits"] and p["total_tokens"] <= cfg.max_sequence for p in prompts)
 
 
-def test_preset_equals_branch_config():
-    from docmt.core.config import RunConfig, make_config
-    data = json.loads((V1 / "configs/hy_a1_structure.json").read_text(encoding="utf-8"))
-    assert RunConfig().apply(data).to_dict() == make_config("hy_a1_structure", run_id="TO_FILL", backend="hf").to_dict()
+def test_default_preset_loads():
+    from docmt.core.config import RunConfig
+    data = json.loads((V1 / "configs/hy_mt_vlsp26.json").read_text(encoding="utf-8"))
+    cfg = RunConfig().apply(data)
+    assert cfg.backend == "hf" and cfg.batch_size == 8 and cfg.repetition_penalty == 1.0
+    assert not (cfg.do_sample or cfg.source_context or cfg.soft_glossary or cfg.target_history)
+    assert cfg.extra["payload_delimiter"] == "newline" and cfg.extra["legal_prose_blocks"] is True
 
 
 def test_replay_backend_hit_and_miss(tmp_path):

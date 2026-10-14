@@ -1,5 +1,4 @@
-"""Run configuration (fields follow Lam/mau_ban_giao/run_config.template.json, all implemented)."""
-# Split from lam_docmt/config.py (statements verbatim; tools/split_from_lam_docmt.py).
+"""Run configuration."""
 from __future__ import annotations
 
 import hashlib
@@ -9,7 +8,7 @@ from dataclasses import asdict, dataclass, field, fields
 @dataclass
 class RunConfig:
     run_id: str = "TO_FILL"
-    branch: str = "hy_a1_structure"
+    branch: str = "hy_mt_vlsp26"
     owner: str = "Lam"
     backend: str = "hf"                  # "hf" | "mock"
     model: str = ""                      # HF model dir (hf backend)
@@ -17,7 +16,7 @@ class RunConfig:
     tokenizer_path: str = ""
     tokenizer_sha256: str = ""
     server_url: str = "http://127.0.0.1:8099"   # unused since llama.cpp was dropped; kept so old run_config.json files load
-    # structure / budgets (draft section 2)
+    # structure / budgets
     source_cap: int = 768                # tokens of the unit payload, markers included
     evidence_cap: int = 512
     max_sequence: int = 4096
@@ -76,10 +75,10 @@ class RunConfig:
 
 # Branch presets: change one component per ablation (contract section 2).
 BRANCHES = {
-    "hy_a1_structure": dict(source_context=False, soft_glossary=False, target_history=False),
-    "hy_a1_source_context": dict(source_context=True, soft_glossary=False, target_history=False),
-    "hy_a1_source_context_glossary": dict(source_context=True, soft_glossary=True, target_history=False),
-    "hy_a1_source_context_history": dict(source_context=True, soft_glossary=False, target_history=True),
+    "hy_mt_vlsp26": dict(source_context=False, soft_glossary=False, target_history=False),
+    "hy_mt_source_context": dict(source_context=True, soft_glossary=False, target_history=False),
+    "hy_mt_source_context_glossary": dict(source_context=True, soft_glossary=True, target_history=False),
+    "hy_mt_source_context_history": dict(source_context=True, soft_glossary=False, target_history=True),
 }
 
 def make_config(branch: str, **overrides) -> RunConfig:

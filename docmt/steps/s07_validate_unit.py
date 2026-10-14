@@ -1,15 +1,14 @@
-"""Validator (agent V): deterministic HARD failures + heuristic WARNINGS, source vs output only.
+"""Validator: deterministic HARD failures + heuristic WARNINGS, source vs output only.
 
-- HARD failures are deterministic and trigger the one quality-recovery round (SPEC section 3).
+- HARD failures are deterministic and trigger the one quality-recovery round.
 - WARNINGS are heuristics (status `needs_review`); they are never proof of a meaning error
-  (draft section 2: "Regex không được dùng làm bằng chứng chắc chắn sai nghĩa").
+  (a regex is never used as firm evidence of a wrong meaning).
 - Nothing here reads reference/gold text: every check compares the SOURCE with the OUTPUT.
 
-Public API (SPEC): check_unit, check_document, audit_plain_output, number_tokens.
+Public API: check_unit, check_document, audit_plain_output, number_tokens.
 Helpers used by tools/audit_existing.py: compare_numbers, compare_headings, find_loops,
 heading_list, display_heading, display_value.
 """
-# Split from lam_docmt/validate.py (statements verbatim; tools/split_from_lam_docmt.py).
 from __future__ import annotations
 
 import re
@@ -21,7 +20,7 @@ from ..checks.loops import find_loops
 from ..checks.numbers import compare_numbers
 from ..core.datatypes import UnitCheck
 
-RATIO_BOUNDS = {("en", "vi"): (0.45, 2.6), ("vi", "en"): (0.35, 2.0)}  # chars out/src (SPEC)
+RATIO_BOUNDS = {("en", "vi"): (0.45, 2.6), ("vi", "en"): (0.35, 2.0)}  # chars out/src
 
 MIN_RATIO_CHARS = 20          # skip length-ratio warning for shorter source payloads
 
@@ -34,14 +33,25 @@ def _ratio_bounds(src_lang, tgt_lang, cfg=None):
         return float(lo), float(hi)
     return RATIO_BOUNDS.get((src_lang, tgt_lang), (0.35, 2.6))
 
-_SEG_LABEL = re.compile(r"^[“\"'‘\[]*\s*(?:\(\s*(\d{1,3}(?:\.\d{1,2})*|[a-zđ]|dd|[ivxlc]{1,6})\s*\)|"
-                        r"(\d{1,3}(?:\.\d{1,2})*|[a-zđ]|dd|[ivxlc]{1,6})\s*[.)\-–:])", re.I)
+_LABEL_CORE = r"\d{1,3}(?:\.\d{1,2})*|(?:dd|[a-zđ])\d{0,3}|[ivxlc]{1,6}"
+_SEG_LABEL = re.compile(r"^[“\"'‘\[]*\s*(?:\(\s*("+_LABEL_CORE+r")\s*\)|("+_LABEL_CORE+r")\s*[.)\-–:])", re.I)
 
 def _label_of(text):
     m = _SEG_LABEL.match(_nfc(text).strip())
     if not m:
         return None
     return (m.group(1) or m.group(2)).lower().replace("dd", "đ")
+
+def _inline_label_pattern(core):
+    # Vietnamese đ is conventionally rendered dd in EN labels; d is distinct.
+    value=re.escape(core).replace('đ',r'(?:đ|dd)')
+    return re.compile(r'(?<!\w)\(?\s*'+value+r'\s*[.)\-–:]',re.I)
+
+def source_sub_labels(payload):
+    # Only explicit sub-point enumerators after a boundary, not prose references
+    # such as "points a, d2, g1". The parser may keep these inside a parent node.
+    return list(dict.fromkeys(m.group(1) for m in re.finditer(
+        r'(?:^|[;:\n])\s*((?:dd|[a-zđ])\d{1,3}\))',payload,re.I)))
 
 def check_unit(unit, nodes_by_id, result, parsed, src_lang, tgt_lang, cfg=None) -> UnitCheck:
     """Checks one generated unit. HARD: ParseResult.hard, no_eos, protected_heading_lost:<id>,
@@ -71,6 +81,27 @@ def check_unit(unit, nodes_by_id, result, parsed, src_lang, tgt_lang, cfg=None) 
         out_parts.append(seg)
         # HARD: protected heading number lost
         prot = node.protected or {}
+        for label in source_sub_labels(payload):
+            core=_label_of(label)
+            if core and not _inline_label_pattern(core).search(seg):
+                hard.append(f'protected_inline_label_lost:{nid}:{core}')
+        # Verify every legal heading/label retained inside a block, independently of
+        # target newlines. No line-i to source-node-i alignment is fabricated.
+        for member in prot.get('block_members',[]):
+            mp=member.get('protected',{});mid=member['node_id']
+            mt,mn=mp.get('heading_type'),mp.get('heading_number')
+            if mt in _HEADING_TYPES and mn not in (None,''):
+                value=_hvalue(str(mn))
+                if value and _has_heading(payload,mt,value) and not _has_heading(seg,mt,value):
+                    hard.append(f'protected_heading_lost:{mid}')
+            label=mp.get('label')
+            core=_label_of(str(label)) if label else None
+            # Bullets and non-numbered labels are not numbered clauses. Two
+            # failed parses (None == None) must not enter the numeric regex.
+            if core and _label_of(member.get('payload',''))==core:
+                # Labels may move inline, but the value and delimiter must survive.
+                pat=_inline_label_pattern(core)
+                if pat.search(payload) and not pat.search(seg):hard.append(f'protected_block_label_lost:{mid}')
         htype, hnum = prot.get("heading_type"), prot.get("heading_number")
         if htype in _HEADING_TYPES and hnum not in (None, ""):
             want = _hvalue(str(hnum))
@@ -118,6 +149,15 @@ def check_unit(unit, nodes_by_id, result, parsed, src_lang, tgt_lang, cfg=None) 
         details["fffd"] = out_text.count(FFFD)
     loops = find_loops(ANY_MARKER.sub(" ", unit.payload or ""), ANY_MARKER.sub(" ", out_text))
     if loops["flagged"]:
+        # Severe consecutive substring degeneration only. Repeated headings/line boilerplate
+        # remain warnings; do not deduplicate legitimate translated legal clauses.
+        table_unit=any(nodes_by_id[nid].table is not None or nodes_by_id[nid].kind=="table_cell"
+                       for nid in unit.node_ids if nid in nodes_by_id)
+        minimum_chars=160 if table_unit else 40
+        severe=[x for x in loops["substring"] if x["flagged"] and x["class"]=="text"
+                and x["unit_len"]>=8 and x["chars"]>=minimum_chars and x["reps"]>=5]
+        if severe and (getattr(cfg,"extra",{}) or {}).get("degeneration_retry"):
+            hard.append("degenerate_repetition")
         warnings.append("loop_not_in_source")
         details["loops"] = [x for x in loops["substring"] + loops["lines"] if x["flagged"]][:5]
     if src_parts:

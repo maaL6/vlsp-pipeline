@@ -1,5 +1,4 @@
-"""HY A1 tokenizer helper: exact token counts without loading weights (tokenizers>=0.21)."""
-# Split from lam_docmt/tok.py (statements verbatim; tools/split_from_lam_docmt.py).
+"""Hy-MT2 tokenizer helper: exact token counts without loading weights (tokenizers>=0.21)."""
 from __future__ import annotations
 
 import hashlib

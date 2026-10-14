@@ -1,1 +1,1 @@
-"""Optional prompt evidence: source index, glossary, target memory (all off in hy_a1_structure)."""
+"""Optional prompt evidence: source index, glossary, target memory (all off in hy_mt_vlsp26)."""

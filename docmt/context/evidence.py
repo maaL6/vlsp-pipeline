@@ -1,4 +1,3 @@
-"""Split from lam_docmt/context.py (statements verbatim; tools/split_from_lam_docmt.py)."""
 from __future__ import annotations
 
 import re
@@ -153,7 +152,7 @@ _HEADERS = {
 
 def render_background(items) -> str:
     """Background block for prompts.HY_BACKGROUND, in the given (priority) order. Glossary lines use
-    the A1-native "X translates to Y" form; pass terms=() to build_prompt when using this text."""
+    the model-native "X translates to Y" form; pass terms=() to build_prompt when using this text."""
     lines, prev = [], None
     for it in items:
         if not it.text:

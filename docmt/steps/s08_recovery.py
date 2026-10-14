@@ -1,10 +1,9 @@
-"""Split from lam_docmt/runtime.py, lam_docmt/units.py (statements verbatim; tools/split_from_lam_docmt.py)."""
 from __future__ import annotations
 
 from ..core.codes import _code
 from ..core.datatypes import Unit
-from .s03_pack import _greedy, _sha, render_payload, unit_markers
-from .s03_split import split_node
+from .s03_pack import _greedy, _period_greedy, _sha, render_payload, unit_markers
+from .s03_split import split_node, ends_at_period
 
 # Hard failures meaning "the output could not be mapped back to the unit's nodes". They send a
 # multi-node unit to independent recovery (each node alone). line_count_mismatch is the
@@ -33,12 +32,16 @@ def _span_text(nodes_by_id, a: int, b: int):
         p = n.raw_end
     return "".join(out)
 
-def _halves(items, count):
+def _halves(items, count, period_only=False):
     best = None
     for k in range(1, len(items)):
+        if period_only and not ends_at_period(items[k-1].payload):
+            continue
         worst = max(count(items[:k]), count(items[k:]))
         if best is None or worst < best[0]:
             best = (worst, k)
+    if best is None:
+        return [items]
     k = best[1]
     return [items[:k], items[k:]]
 
@@ -59,8 +62,8 @@ def recovery_units(unit, nodes_by_id, tok, cfg, ns, independent: bool) -> list:
         raise ValueError(f"recovery_units: node {e} of {unit.unit_id} not in nodes_by_id") from None
     work = []
     for n in parents:
-        pieces = split_node(n, tok, cfg.recovery_cap) if tok.count(n.payload) > cfg.recovery_cap else [n]
-        if any(tok.count(p.payload) > cfg.recovery_cap for p in pieces):
+        pieces = split_node(n, tok, cfg.recovery_cap, sentence_only=bool((cfg.extra or {}).get("sentence_only"))) if tok.count(n.payload) > cfg.recovery_cap else [n]
+        if not (cfg.extra or {}).get("sentence_only") and any(tok.count(p.payload) > cfg.recovery_cap for p in pieces):
             raise ValueError(f"recovery source cannot fit cap {cfg.recovery_cap}: {n.node_id}")
         for p in pieces:
             if p is not n:
@@ -76,9 +79,14 @@ def recovery_units(unit, nodes_by_id, tok, cfg, ns, independent: bool) -> list:
             return tok.count(render_payload(group, marks))
 
         max_n = cfg.max_table_nodes if unit.kind == "table" else cfg.max_nodes
-        groups = [g for g, _ in _greedy(work, count, cfg.recovery_cap, max_n)]
+        if (cfg.extra or {}).get("sentence_only") and unit.kind not in ("table","signature"):
+            groups=[g for g,_ in _period_greedy(list(range(len(work))),work,
+                lambda positions:count([work[i] for i in positions]),cfg.recovery_cap,max_n)]
+            groups=[[work[i] for i in g] for g in groups]
+        else:
+            groups = [g for g, _ in _greedy(work, count, cfg.recovery_cap, max_n)]
         if len(groups) == 1 and len(work) > 1 and [x.node_id for x in work] == list(unit.node_ids):
-            groups = _halves(work, count)
+            groups = _halves(work, count,period_only=bool((cfg.extra or {}).get("sentence_only")))
         kind = "recovery"
 
     out = []
@@ -106,11 +114,11 @@ def should_recover(hard, cfg) -> bool:
 def recovery_mode(unit, hard):
     """(mode, independent) for the single recovery round of a unit with hard failures.
 
-    - multi-node unit sent with markers ("marker" mode, phương án A): a marker failure ->
+    - multi-node unit sent with markers ("marker" mode): a marker failure ->
       "independent" (each node alone); any other failure -> "regroup" into <= recovery_cap units
       that again carry markers;
-    - multi-node unit sent newline-joined ("newline" mode, phương án B, Unit.markers == []):
-      ALWAYS "independent", whatever the failure. Reason (v1.2, 04/10/2026): with newline joining
+    - multi-node unit sent newline-joined ("newline" mode, Unit.markers == []):
+      ALWAYS "independent", whatever the failure. Reason: with newline joining
       a failed unit is most often mis-aligned (the model merged a heading with the next paragraph,
       split a sentence over two lines ...), even when the line count matched and the visible
       failure is e.g. protected_heading_lost. A regrouped retry is newline-joined again and the
@@ -138,4 +146,5 @@ def recovery_reason(mode: str, hard) -> str:
 def is_identical_retry(kids, builds, first_request) -> bool:
     """Greedy decoding would repeat the first pass: one child with the same prompt and budget."""
     return (len(kids) == 1 and len(builds) == 1 and builds[0].request.prompt == first_request.prompt
-            and builds[0].request.max_new_tokens == first_request.max_new_tokens)
+            and builds[0].request.max_new_tokens == first_request.max_new_tokens
+            and builds[0].request.repetition_penalty == first_request.repetition_penalty)

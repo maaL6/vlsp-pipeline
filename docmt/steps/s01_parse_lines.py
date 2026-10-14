@@ -1,19 +1,17 @@
-"""Structure parser (agent P): raw SOURCE text -> list[Node] that partition the source exactly.
+"""Structure parser: raw SOURCE text -> list[Node] that partition the source exactly.
 
-Contract: SPEC.md section 3 "parse.py" (draft section 2 wins on conflict). Only the source side of a
-doc-direction is ever read here; nothing in this module looks at a reference/gold file.
+Only the source side of a doc-direction is ever read here; nothing in this module looks at a reference/gold file.
 
 Pipeline (line based, offsets kept on the raw string, raw text never modified):
   1. lines + features (indent, cells split by >=3 spaces, upper-case ratio, labels)
   2. header regions (national motto anchored), table regions (numeric anchors / pipe rows)
   3. text blocks: blank lines end a block; inside a run of lines a new block starts at a structure
      label or a short/sentence-final line (PDF text often has no blank line between paragraphs)
-  4. page-break join across blank lines (SPEC rule + connector-word extension, flagged)
+  4. page-break join across blank lines (connector-word extension, flagged)
   5. signature blocks, recipients, attachment/appendix scopes, quote scopes, paths, protected
   6. content spans -> Nodes; whitespace between spans goes to trail (up to the last newline) and
      lead (indentation / column gap). Invariant: "".join(n.raw) == src.
 """
-# Split from lam_docmt/parse.py (statements verbatim; tools/split_from_lam_docmt.py).
 from __future__ import annotations
 
 import re
@@ -29,7 +27,7 @@ except Exception:  # pragma: no cover
 # ----------------------------------------------------------------------------------------------
 # regexes and word lists (generic, no document-specific values)
 # ----------------------------------------------------------------------------------------------
-TERMINAL = set('.;:!?)”"')          # SPEC page-break rule: paragraph "ends" with one of these
+TERMINAL = set('.;:!?)”"')          # page-break rule: paragraph "ends" with one of these
 
 SENT_END = set(".;:!?")
 

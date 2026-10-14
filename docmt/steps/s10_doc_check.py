@@ -1,4 +1,3 @@
-"""Split from lam_docmt/validate.py (statements verbatim; tools/split_from_lam_docmt.py)."""
 from __future__ import annotations
 
 import collections
@@ -141,6 +140,8 @@ def decide_status(op_error: bool, out_text: str, unresolved_units, empty_work, u
     when any unit/node is unresolved, uncovered, or a document-level hard failure remains."""
     if op_error:
         return "failed", "operational_error"
+    if "selected_output_limit_unresolved" in doc_hard:
+        return "failed", "selected_output_limit_unresolved"
     if not out_text.strip():
         return "failed", "empty_output_document"
     if unresolved_units or empty_work or uncovered or doc_hard:

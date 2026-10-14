@@ -1,6 +1,6 @@
 """Command-line entry points (python -m docmt <command>).
 
-  run               manifest + data root -> delivery layout (dev/smoke runs, as lam_docmt run)
+  run               manifest + data root -> delivery layout (dev/smoke runs)
   run-dir           folder of .md -> folder of .md with the same tree (final/Docker contract)
   inspect           dump intermediate results of steps s01..s05 without a model (--stop-after)
   parse-audit       parser roundtrip report
@@ -65,7 +65,7 @@ def folder_rows(input_dir: Path, direction: str) -> list:
 
 def _add_run_args(p, need_out=True):
     p.add_argument("--config", help="preset JSON (configs/*.json); flags below override it")
-    p.add_argument("--branch", default="hy_a1_structure")
+    p.add_argument("--branch", default="hy_mt_vlsp26")
     p.add_argument("--run-id", default=None)
     p.add_argument("--backend", choices=("hf", "mock"), default=None)
     p.add_argument("--tokenizer", required=True)

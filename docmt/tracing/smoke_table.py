@@ -1,4 +1,3 @@
-"""Split from lam_docmt/trace.py (statements verbatim; tools/split_from_lam_docmt.py)."""
 from __future__ import annotations
 
 import csv
@@ -91,7 +90,7 @@ def smoke_row(item: dict, status: dict | None, n_trace: int, run_id: str) -> dic
     return row
 
 def write_smoke_table(run_dir, items, out_path=None, run_id: str | None = None) -> Path:
-    """tests/smoke_result.csv (columns of Lam/mau_ban_giao/SMOKE_RESULT.csv) from the run logs.
+    """tests/smoke_result.csv from the run logs.
     `items`: [{"sample_id", "direction"}] in the order the table should list them."""
     run_dir = Path(run_dir)
     statuses = {(r.get("doc_id"), r.get("direction")): r for r in read_jsonl(run_dir / "logs" / LOG_FILES["status"])}

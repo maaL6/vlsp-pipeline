@@ -1,4 +1,4 @@
-"""Generation backends (SPEC section 3): GenRequest list -> GenResult list.
+"""Generation backends: GenRequest list -> GenResult list.
 
 - hf:       transformers AutoModelForCausalLM, padded batch generate (torch imported lazily).
 - mock:     deterministic scripted fake for tests (echo + injectable faults).
@@ -6,7 +6,6 @@
 Operational problems (network, OOM) are retried/counted here and never mixed with the
 quality-recovery round of the runtime: `stats` = {"op_retries", "op_errors", "oom"}.
 """
-# Split from lam_docmt/backends/__init__.py (statements verbatim; tools/split_from_lam_docmt.py).
 from __future__ import annotations
 
 import threading
