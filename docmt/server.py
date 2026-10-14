@@ -14,6 +14,8 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import signal
+import sys
 import tempfile
 import threading
 import time
@@ -83,7 +85,7 @@ def make_handler(translator: Translator):
                        "application/json; charset=utf-8")
 
         def do_GET(self):
-            if urlparse(self.path).path == "/health":
+            if urlparse(self.path).path in ("/", "/health"):
                 self._send(200, b'{"status": "ok"}', "application/json")
             else:
                 self._error(404, "use POST /translate or GET /health")
@@ -122,7 +124,11 @@ def make_handler(translator: Translator):
 def build_translator(model: str, tokenizer: str, config: str) -> Translator:
     from .backends import make_backend
     cfg = RunConfig().apply(json.loads(Path(config).read_text(encoding="utf-8")))
-    cfg.apply({"run_id": "vlsp26-service", "backend": "hf", "model": model, "tokenizer_path": tokenizer})
+    overrides = {"run_id": "vlsp26-service", "backend": "hf", "model": model, "tokenizer_path": tokenizer}
+    for env, key in (("HF_DEVICE", "hf_device"), ("HF_DTYPE", "hf_dtype")):  # e.g. HF_DEVICE=cpu HF_DTYPE=float32 for a smoke test without GPU
+        if os.environ.get(env):
+            overrides[key] = os.environ[env]
+    cfg.apply(overrides)
     if cfg.reference_available_at_inference or cfg.normalize_reference:
         raise SystemExit("inference must not use or normalize references")
     if cfg.source_context or cfg.soft_glossary or cfg.target_history:
@@ -147,6 +153,7 @@ def main() -> int:
     ap.add_argument("--host", default=os.environ.get("HOST", "0.0.0.0"))
     ap.add_argument("--port", type=int, default=int(os.environ.get("PORT", "8000")))
     args = ap.parse_args()
+    signal.signal(signal.SIGTERM, lambda *_: sys.exit(0))  # docker stop: as PID 1 the process would otherwise ignore SIGTERM
     print(f"[server] loading model from {args.model} ...", flush=True)
     translator = build_translator(args.model, args.tokenizer or str(Path(args.model) / "tokenizer.json"), args.config)
     serve(translator, args.host, args.port)

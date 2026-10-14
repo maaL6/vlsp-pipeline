@@ -1,0 +1,10 @@
+# Shell scripts and Docker files must keep LF (a CRLF checkout breaks them inside Linux containers).
+*.sh text eol=lf
+Dockerfile text eol=lf
+.dockerignore text eol=lf
+# Data files contain CR/LF inside quoted fields; never convert them (csv_md5 in kaggle/run_spec.json depends on the bytes).
+*.csv -text
+dataset/** -text
+*.zip binary
+*.pdf binary
+*.png binary
