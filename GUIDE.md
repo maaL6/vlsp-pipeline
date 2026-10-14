@@ -175,7 +175,7 @@ Thử khung dịch vụ khi không có GPU (rất chậm, cần khoảng 8 GB RA
 tools/package_docker.sh hy-mt-vlsp26 dist
 ```
 
-Tạo `dist/hy-mt-vlsp26.tar.gz` (gồm `image.tar`, `translate.sh`, `README.txt`) và `dist/hy-mt-vlsp26.tar.gz.md5`.
+Tạo `dist/hy-mt-vlsp26.tar.gz` (gồm `image.tar`, `translate.sh`, `README.md`) và `dist/hy-mt-vlsp26.tar.gz.md5`.
 Upload file `.tar.gz` lên Google Drive/OneDrive, bật quyền tải, dán link vào ô Project URL cùng MD5 theo yêu cầu form.
 Người nhận dùng: `docker load -i image.tar`, rồi chạy như mục 4.
 

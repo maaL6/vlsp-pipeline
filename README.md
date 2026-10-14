@@ -83,7 +83,7 @@ Theo trang cuộc thi, bài nộp là image Docker tự chứa chạy offline c�
 (bật quyền tải). Chỉ bản nộp cuối được chấm.
 
 ```bash
-tools/package_docker.sh hy-mt-vlsp26 dist      # dist/hy-mt-vlsp26.tar.gz (image.tar + translate.sh + README.txt) và file .md5
+tools/package_docker.sh hy-mt-vlsp26 dist      # dist/hy-mt-vlsp26.tar.gz (image.tar + translate.sh + README.md) và file .md5
 ```
 
 Điền form nộp: Team name, Method name, Method description, Project URL (link tải archive trên), Publication URL
