@@ -13,7 +13,7 @@ Model: Hy-MT2-1.8B + LoRA adapter (fewer than 3B parameters), fp16, greedy decod
 
 ## Requirements
 
-Linux, an NVIDIA GPU with at least about 5 GB free memory (fp16), a recent NVIDIA driver, Docker and the NVIDIA Container Toolkit
+Linux, an NVIDIA GPU with at least about 6 GB free memory (fp16, 8 GB GPU recommended), a recent NVIDIA driver, Docker and the NVIDIA Container Toolkit
 (`docker run --gpus all ...`). `translate.sh` needs `bash` and `curl`.
 
 ## Run
@@ -63,6 +63,34 @@ In CSV mode a document that fails twice is copied unchanged so the file always h
 - Translating a full document-level test set takes several hours on one GPU; long documents (hundreds of KB) take minutes each.
   Do not set a short client timeout.
 - Quick check: `docker run --rm --gpus all --entrypoint python hy-mt-vlsp26 -c "import torch; print(torch.cuda.is_available())"` should print `True`.
+
+## Speed and resource use
+
+Default: `batch_size` 8, `batch_token_cap` 32768, fp16 greedy. Measured on the private test (50 documents per direction, Tesla T4):
+
+| Direction | Input words | Time | Words/s | Tokens/s | Peak GPU memory |
+|---|---|---|---|---|---|
+| EN→VI | 333,455 | 6,006 s | ~56 | ~118 | 4.97 GB |
+| VI→EN | 545,274 | 5,827 s | ~94 | ~109 | 5.27 GB |
+
+Larger batches (estimated, not measured on the full test):
+
+| `batch_size` | `batch_token_cap` | Peak GPU memory | Speed vs batch 8 | Private test, both directions, one GPU | Minimum GPU |
+|---|---|---|---|---|---|
+| 8 (default) | 32768 | ~5.3 GB | 1× | ≥ 3.3 h | 8 GB |
+| 16 | 65536 | ~7–8 GB | ~1.3–1.5× | ~2.2–2.5 h | 12 GB |
+| 32 | 131072 | ~12–13 GB | ~1.6–2× | ~1.7–2.1 h | 16 GB (tight) |
+| 64 | 262144 | ~20–22 GB | ~1.6–2× | ~1.7–2.1 h | 24 GB |
+
+To change the batch size:
+
+```bash
+mkdir -p cfg && docker run --rm --entrypoint cat hy-mt-vlsp26 /app/configs/hy_mt_vlsp26.json > cfg/fast.json
+# edit cfg/fast.json: "batch_size", and in "extra": "batch_token_cap", "batch_maximum" (same value as batch_size)
+docker run --rm --gpus all -e CONFIG=/cfg/fast.json -v $PWD/cfg:/cfg:ro -p 8000:8000 hy-mt-vlsp26
+```
+
+On a CUDA out-of-memory error the batch is halved automatically.
 
 ## Method in brief
 
