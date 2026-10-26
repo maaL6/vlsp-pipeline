@@ -15,14 +15,14 @@ venv/
 # generated default AIHub submission
 /submission.zip
 # LaTeX build artifacts (keep .tex and the final .pdf)
-paper/*.aux
-paper/*.fdb_latexmk
-paper/*.fls
-paper/*.log
-paper/*.synctex.gz
-paper/*.out
-paper/*.bbl
-paper/*.blg
+paper/**/*.aux
+paper/**/*.fdb_latexmk
+paper/**/*.fls
+paper/**/*.log
+paper/**/*.synctex.gz
+paper/**/*.out
+paper/**/*.bbl
+paper/**/*.blg
 
 # Kaggle staging
 kaggle/build/
