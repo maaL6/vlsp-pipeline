@@ -12,3 +12,6 @@ docs/
 submission.zip
 dist/
 adapter/
+out/
+work/
+tmp/

@@ -32,14 +32,10 @@ major sections retained. The reported score/cost tables and the two figure PDFs
 are preserved. Prose was condensed and implementation descriptions and formulas
 were checked against the local training and inference code.
 
-See [VERIFICATION.md](VERIFICATION.md) for the audit of all 23 original references,
-the 20 retained citations, formula checks and the provenance of the added Index
-training configuration. All retained sources were verified against primary
-records. The document-count change from 575 to 612 is now verified; the origin
-of the internal validation partition still needs clarification. Author email
-addresses have been supplied and added in the original author order. The
-main-table baseline/Index scores are retained from the original paper by author
-decision; their run provenance remains incomplete. Saved predictions were rescored on CPU and
-document-bootstrap intervals recomputed; no model inference or training was run.
-See verification/CLAIM_AUDIT.md for claim-level source checks and the remaining
-run-provenance gaps.
+The 20 retained references were checked against primary records. The origin of
+the internal validation partition still needs clarification. The main-table
+baseline/Index scores are retained from the original paper by author decision;
+their run provenance remains incomplete.
+
+Reproduction scripts are documented in [verification/README.md](verification/README.md).
+Generated JSON reports and local editorial/search notes are ignored by Git.

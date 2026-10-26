@@ -8,6 +8,7 @@ delivery/
 # generated translations, local runs, and cleanup archives
 /out/
 /work/
+/tmp/
 # python / tooling
 __pycache__/
 *.pyc
@@ -26,6 +27,24 @@ paper/**/*.synctex.gz
 paper/**/*.out
 paper/**/*.bbl
 paper/**/*.blg
+paper/**/*.toc
+paper/**/*.lof
+paper/**/*.lot
+paper/**/*.nav
+paper/**/*.snm
+paper/**/*.vrb
+paper/**/*.xdv
+paper/**/*.run.xml
+paper/**/*.bcf
+# Local editorial audits and generated verification reports; keep reproduction scripts
+/paper/acl/VERIFICATION.md
+/paper/acl/verification/CLAIM_AUDIT.md
+/paper/acl/verification/DOCUMENTS_SEARCH.md
+/paper/acl/verification/*.json
+# Editor temporary files
+*.swp
+*.swo
+*~
 
 # Kaggle staging
 kaggle/build/
