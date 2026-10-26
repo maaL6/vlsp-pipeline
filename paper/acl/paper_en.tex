@@ -1,7 +1,10 @@
-\documentclass[conference]{IEEEtran}
-\IEEEoverridecommandlockouts
+\documentclass[11pt]{article}
+% Use [review] for an anonymous submission with line numbers.
+\usepackage[final]{acl}
+\usepackage{times}
+\usepackage{latexsym}
+\usepackage{microtype}
 
-\usepackage{cite}
 \usepackage{amsmath,amssymb,amsfonts}
 \usepackage{algorithmic}
 \usepackage{graphicx}
@@ -24,22 +27,16 @@
 
 \title{Document-Level English--Vietnamese Legal Machine Translation with a Fine-Tuned Small Language Model and a Structure-Aware Pipeline}
 
-\author{\IEEEauthorblockN{\textbf{Trần Đức Lâm}$^{1}$, \textbf{Lê Vân Anh}$^{1}$, \textbf{Phạm Thị Khánh Linh}$^{1}$, \textbf{Nguyễn Thị Hiền Trang}$^{1}$}
-\IEEEauthorblockA{$^{1}$University of Engineering and Technology,\\
+\author{Trần Đức Lâm, Lê Vân Anh, Phạm Thị Khánh Linh, Nguyễn Thị Hiền Trang \\
+University of Engineering and Technology, \\
 Vietnam National University, Hanoi, Vietnam}
-% emails (to be provided), one line in monospace, e.g.:
-% {\footnotesize\texttt{name1@vnu.edu.vn, name2@gmail.com, ...}}
-}
+% Add the authors' email addresses when available.
 
 \maketitle
 
 \begin{abstract}
 We present our system for the VLSP 2026 shared task on document-level English--Vietnamese legal machine translation. Translating legal documents requires correct and consistent terminology, preserved structure and no omitted content, while the documents are often much longer than the amount of text a small model can read at once. To address this, we combine two components: LoRA fine-tuning of a translation model with fewer than 3 billion parameters on a cleaned and extended legal corpus, and a structure-aware Markdown pipeline that translates a document block by block, validates each output and re-translates the blocks that fail. On the public test set, the system reaches 70.87 BLEU for English-to-Vietnamese and 47.44 BLEU for Vietnamese-to-English. Controlled experiments show that fine-tuning on the processed data contributes the most, while the pipeline further improves quality in both directions at a cost of about two hours and 5~GB of GPU memory per direction.
 \end{abstract}
-
-\begin{IEEEkeywords}
-legal machine translation, document-level translation, low-rank adaptation, small language models, English--Vietnamese
-\end{IEEEkeywords}
 
 \section{Introduction}
 Legal documents pose a significant challenge to machine translation (MT) systems. They contain many specialised terms whose meanings differ markedly from general language, and they demand strict consistency across the whole document. A translation must also preserve every right, obligation, condition and exception of the source: a single omitted clause or a wrong number can change the legal effect completely. Finally, laws and decrees are long and hierarchically structured, with articles, clauses, points, tables and nested signature blocks, so they easily exceed the context window of small language models.
@@ -77,8 +74,6 @@ Our approach has three consecutive steps. First, we process the training data of
 The training data of the task is parallel: it consists of pairs of legal documents, each with an English version and a Vietnamese version that correspond to each other. Each document is cut into several slices (views) at different levels: the preamble, a single article, a single clause, a group of adjacent articles, or the whole document. Slices are cut at the structural boundaries of legal texts (article, clause and article group), not at sentence boundaries. This keeps every sentence and every condition intact and exposes the model to inputs of different lengths, matching the blocks that the pipeline feeds to the model at inference time. A slice together with its translation forms one training row. We process the data in four steps (Fig.~\ref{fig:data}). Every removal or edit is stored in a separate decision file instead of modifying the source data, so every change can be traced and re-run. Table~\ref{tab:scale} compares the scale of the data before and after processing.
 
 \begin{table}[t]
-\caption{Scale of the training data. ``Initial'' is the data after parsing. A row is one slice of a document with its translation, not a single sentence.}
-\label{tab:scale}
 \centering
 \begin{tabular}{lrr}
 \toprule
@@ -88,6 +83,8 @@ Training documents & 575 & 612 \\
 Training rows & 54,134 & 82,203 \\
 \bottomrule
 \end{tabular}
+\caption{Scale of the training data. ``Initial'' is the data after parsing. A row is one slice of a document with its translation, not a single sentence.}
+\label{tab:scale}
 \end{table}
 
 \textbf{Alignment review.} The English and Vietnamese versions of a document sometimes do not match, for example when a clause is missing on one side or the decree numbers differ between the two languages. We flag 237 slices whose document codes or large numbers do not correspond between English and Vietnamese, review them, and remove 158 of them. Because an automatic flag is not proof of an error (a number may, for instance, be written in words on one side), these decisions are stored separately. When another slice of the same document contains the verbatim text of a removed segment, that slice is removed as well.
@@ -99,9 +96,8 @@ Training rows & 54,134 & 82,203 \\
 \textbf{Extension and filtering.} The original rows are relatively long slices, from one clause to a group of several articles. To familiarise the model with shorter units as well, we add three groups of rows to the training set, listed in Table~\ref{tab:composition}. The first group is paragraph-level rows: individual paragraphs cut from the documents, much shorter than a complete article. The second group is hand-written formula phrases, including the national title, the motto, signer titles, document types, dates and document numbers. The third group is term rows, each a short pair of a term or an agency name that teaches the model how to translate it in context. In addition, we remove pairs that are still misaligned using the LaBSE similarity~\cite{feng2022labse} applied to the flagged pairs, extreme length ratios, mismatched national titles, and mismatched amounts or list labels. We manually correct typing errors and optical character recognition (OCR) errors that remain in the source data, and unify the thousands-separator format and the phrasing of fine amounts.
 
 \begin{table}[t]
-\caption{Composition of the final training data.}
-\label{tab:composition}
 \centering
+\small
 \begin{tabular}{lr}
 \toprule
 Component & Rows \\
@@ -115,6 +111,8 @@ Term rows from public-test references & 72 \\
 \textbf{Total} & \textbf{82,203} \\
 \bottomrule
 \end{tabular}
+\caption{Composition of the final training data.}
+\label{tab:composition}
 \end{table}
 
 \subsection{Base Models and Fine-Tuning}\label{sec:finetune}
@@ -165,7 +163,10 @@ where $|P(x)|$ is the number of tokens of the prompt (the translation instructio
 
 \textbf{Metrics.} We report corpus-level SacreBLEU~\cite{post2018sacrebleu} with the 13a tokenizer, SacreBLEU's default tokenizer, which splits text into tokens on whitespace and punctuation before counting $n$-grams, case-sensitive, together with chrF~\cite{popovic2015chrf}, computed on raw outputs and raw references without normalising either side. BLEU~\cite{papineni2002bleu} is computed at the corpus level:
 \begin{equation}
-\mathrm{BLEU} = \mathrm{BP}\cdot\exp\Big(\sum_{n=1}^{4}\tfrac{1}{4}\log p_n\Big),\quad \mathrm{BP}=\min\big(1,\;e^{\,1-r/c}\big),
+\begin{aligned}
+\mathrm{BLEU} &= \mathrm{BP}\cdot\exp\Big(\sum_{n=1}^{4}\tfrac{1}{4}\log p_n\Big),\\
+\mathrm{BP} &= \min\big(1,\;e^{\,1-r/c}\big),
+\end{aligned}
 \label{eq:bleu}
 \end{equation}
 where $p_n$ is the modified $n$-gram precision computed over the whole corpus, $c$ is the length of the translation and $r$ is the length of the reference. chrF is the weighted harmonic mean of the character $n$-gram precision $\mathrm{chrP}$ and recall $\mathrm{chrR}$, up to order 6 and without word $n$-grams:
@@ -188,8 +189,6 @@ We compare three systems on both models, each adding one component to the previo
 \textbf{Model choice.} According to Table~\ref{tab:main}, before fine-tuning and without the pipeline, Index-Translate scores higher than Hy-MT2 in both directions. However, each model was run with the decoding recommended for it, namely sampling for Hy-MT2 and greedy decoding for Index, so this is not a controlled comparison. After fine-tuning, Hy-MT2 scores higher in both directions, so we choose Hy-MT2-1.8B as our main system. The analyses of node grouping and cost below use only this model.
 
 \begin{table*}[t]
-\caption{Results on the public test set, 50 documents per direction. In row (1), Hy-MT2 translates paragraph by paragraph with sampling following its model card, and the value is the mean $\pm$ standard deviation over three seeds. Index uses greedy decoding, so the two (1) rows are not directly comparable.}
-\label{tab:main}
 \centering
 \begin{tabular}{llcccc}
 \toprule
@@ -206,13 +205,13 @@ Index-Translate-2B & (1) Base, no pipeline & 43.96 & 68.74 & 31.22 & 70.55 \\
  & (3) Fine-tuned + pipeline & 62.59 & 78.89 & 41.76 & 76.48 \\
 \bottomrule
 \end{tabular}
+\caption{Results on the public test set, 50 documents per direction. In row (1), Hy-MT2 translates paragraph by paragraph with sampling following its model card, and the value is the mean $\pm$ standard deviation over three seeds. Index uses greedy decoding, so the two (1) rows are not directly comparable.}
+\label{tab:main}
 \end{table*}
 
 \textbf{Pipeline design.} In the first version of the pipeline, we compared three ways of grouping nodes (Table~\ref{tab:design}). Design C translates each node as a separate request, design A groups adjacent nodes with explicit markers, and design B groups adjacent nodes joined only by newline characters, without markers. Both A and B are better than C, with confidence intervals that do not contain 0 in both directions, because translating node by node loses the context of the neighbouring nodes. B scores no lower than A, and the difference is statistically significant only for \envi{}; B also avoids the loss of markers and shortens the running time. We therefore choose B and extend it to the legal prose blocks of Section~\ref{sec:pipeline}.
 
 \begin{table}[t]
-\caption{Three ways of grouping nodes on a model fine-tuned on about 53.5 thousand training rows, in the first version of the pipeline. Settings: repetition penalty 1.05, batch size 4, one run per design.}
-\label{tab:design}
 \centering
 \footnotesize
 \resizebox{\columnwidth}{!}{%
@@ -227,14 +226,14 @@ B: grouped, no markers & \textbf{68.90} & \textbf{83.39} & \textbf{46.62} & \tex
 C: one node per request & 67.69 & 82.64 & 45.23 & 78.23 \\
 \bottomrule
 \end{tabular}}
+\caption{Three ways of grouping nodes on a model fine-tuned on about 53.5 thousand training rows, in the first version of the pipeline. Settings: repetition penalty 1.05, batch size 4, one run per design.}
+\label{tab:design}
 \end{table}
 
 \subsection{Cost}
 Since Hy-MT2-1.8B was chosen as the main model in the previous subsection, we analyse here the computational cost of systems (1), (2) and (3) based on Hy-MT2-1.8B, as reported in Table~\ref{tab:cost}. The system translates the whole public test set in about 2.0 hours for \envi{} and 1.4 hours for \vien{} on one T4 GPU per direction, with a peak GPU memory of about 5~GB, well within a 16~GB card. The first version of the pipeline needed 4.6 and 2.9 hours for the model fine-tuned on about 53.5 thousand rows, so the final runtime roughly halves the running time. Fine-tuning does not add cost: system (3) is even faster than system (2). For \envi{}, system (3) needs fewer re-translation requests, 836 against 962, and leaves fewer unresolved blocks, 26 against 110. For \vien{}, it needs more re-translation requests, 1,443 against 1,147, but still leaves fewer unresolved blocks, 208 against 241. System (1) is fast because it makes a single call per paragraph and does not validate or re-translate its output.
 
 \begin{table}[t]
-\caption{Running time and peak GPU memory on one T4 GPU per direction, with Hy-MT2-1.8B.}
-\label{tab:cost}
 \centering
 \footnotesize
 \resizebox{\columnwidth}{!}{%
@@ -249,6 +248,8 @@ System & \envi{} & \vien{} & \envi{} & \vien{} \\
 (3) Fine-tuned + pipeline & 7,229 & 4,871 & 4.96 & 5.25 \\
 \bottomrule
 \end{tabular}}
+\caption{Running time and peak GPU memory on one T4 GPU per direction, with Hy-MT2-1.8B.}
+\label{tab:cost}
 \end{table}
 
 \section{Limitations and Discussion}
@@ -259,7 +260,10 @@ These limitations point to several issues for further discussion. Regarding eval
 \section{Conclusion}
 We presented a document-level legal MT system for English--Vietnamese that consists of a model with 1.8 billion parameters, fine-tuned on a cleaned and extended legal corpus, and a structure-aware document pipeline. Controlled experiments on two models show three results. First, fine-tuning on the processed corpus is the largest contributor to translation quality. Second, the pipeline further improves the quality of both the base model and the fine-tuned model, where grouping nodes without markers is better than translating each node separately, and the validation-and-re-translation mechanism repairs failed blocks. Third, the system reaches 70.87 BLEU for \envi{} and 47.44 BLEU for \vien{} on the public test set, using about two hours and 5~GB of GPU memory per direction on a single T4 GPU.
 
-\appendices
+\bibliography{references}
+
+\clearpage
+\appendix
 
 \section{Prompts}\label{app:prompts}
 The prompts below are sent as the user turn of the chat template of each model. In the prompts, \texttt{\{src\}} is the text of the unit and \texttt{\{tgt\}} is ``English'' or ``Vietnamese''.
@@ -276,8 +280,6 @@ The prompts below are sent as the user turn of the chat template of each model. 
 Hy-MT2-1.8B is fine-tuned in two consecutive passes: the first trains an adapter from the base model on about 53.5 thousand rows, and the second continues from that adapter on all 82,203 rows with a lower learning rate.
 
 \begin{table*}[t]
-\caption{Hyperparameters.}
-\label{tab:hyper}
 \centering
 \footnotesize
 \begin{tabular}{p{0.28\textwidth}p{0.62\textwidth}}
@@ -305,6 +307,8 @@ Context limit & 8,192 tokens \\
 Post-processing & none \\
 \bottomrule
 \end{tabular}
+\caption{Hyperparameters.}
+\label{tab:hyper}
 \end{table*}
 
 The SHA-256 of the second-pass adapter (Hy-MT2) is {\footnotesize\texttt{30b5fc68a31c3de3d722\allowbreak a6dee5484aaf98c4f6b9d7\allowbreak b41fb55ac70f6d23a3ba89}}.
@@ -321,8 +325,6 @@ and the ratio to the total number of parameters of the model with the adapter is
 With $L=32$, $r=64$ and the sizes of the seven projections in Table~\ref{tab:loraparams}, $N_{\mathrm{LoRA}} = 77{,}594{,}624$ and $\rho = 77{,}594{,}624 / (1{,}791{,}080{,}448 + 77{,}594{,}624) \approx 4.15\%$.
 
 \begin{table}[t]
-\caption{LoRA parameters per projection (Hy-MT2-1.8B, $r=64$). Each projection contributes $r\,(d_{\mathrm{in}}+d_{\mathrm{out}})$ parameters per layer; the model has 32 layers.}
-\label{tab:loraparams}
 \centering
 \footnotesize
 \begin{tabular}{lrrr}
@@ -341,32 +343,10 @@ down & 6,144 & 2,048 & 524,288 \\
 \textbf{Total, 32 layers} & & & \textbf{77,594,624} \\
 \bottomrule
 \end{tabular}
+\caption{LoRA parameters per projection (Hy-MT2-1.8B, $r=64$). Each projection contributes $r\,(d_{\mathrm{in}}+d_{\mathrm{out}})$ parameters per layer; the model has 32 layers.}
+\label{tab:loraparams}
 \end{table}
 
-\begin{thebibliography}{99}
-\bibitem{vlsp2026} VLSP 2026 Organizers, ``VLSP 2026 shared task on machine translation,'' Association for Vietnamese Language and Speech Processing, 2026. % CHECK: official title and URL
-\bibitem{hu2022lora} E. J. Hu, Y. Shen, P. Wallis, Z. Allen-Zhu, Y. Li, S. Wang, L. Wang, and W. Chen, ``LoRA: Low-rank adaptation of large language models,'' in \emph{Proc. Int. Conf. Learn. Representations (ICLR)}, 2022.
-\bibitem{xu2024alma} H. Xu, Y. J. Kim, A. Sharaf, and H. Hassan Awadalla, ``A paradigm shift in machine translation: Boosting translation performance of large language models,'' in \emph{Proc. Int. Conf. Learn. Representations (ICLR)}, 2024.
-\bibitem{alves2024tower} D. M. Alves \emph{et al.}, ``Tower: An open multilingual large language model for translation-related tasks,'' arXiv:2402.17733, 2024.
-\bibitem{luo2025lmt} Y. Luo \emph{et al.}, ``Beyond English: Toward inclusive and scalable multilingual machine translation with LLMs,'' arXiv:2511.07003, 2025. % CHECK: first-author initials
-\bibitem{zheng2025hunyuanmt} M. Zheng \emph{et al.}, ``Hunyuan-MT technical report,'' arXiv:2509.05209, 2025.
-\bibitem{zheng2026hymt2} Zheng \emph{et al.}, ``Hy-MT2: A family of fast, efficient and powerful multilingual translation models in the wild,'' arXiv:2605.22064, 2026. % CHECK: first-author initials
-\bibitem{nllb2022} NLLB Team, M. R. Costa-juss\`{a} \emph{et al.}, ``No language left behind: Scaling human-centered machine translation,'' arXiv:2207.04672, 2022.
-\bibitem{doan2021phomt} L. Doan, L. T. Nguyen, N. L. Tran, T. Hoang, and D. Q. Nguyen, ``PhoMT: A high-quality and large-scale benchmark dataset for Vietnamese-English machine translation,'' in \emph{Proc. Conf. Empirical Methods Natural Lang. Process. (EMNLP)}, 2021, pp. 4495--4503.
-\bibitem{ngo2022mtet} C. Ngo \emph{et al.}, ``MTet: Multi-domain translation for English and Vietnamese,'' arXiv:2210.05610, 2022.
-\bibitem{voita2019context} E. Voita, R. Sennrich, and I. Titov, ``When a good translation is wrong in context: Context-aware machine translation improves on deixis, ellipsis, and lexical cohesion,'' in \emph{Proc. Annu. Meeting Assoc. Comput. Linguistics (ACL)}, 2019, pp. 1198--1212.
-\bibitem{maruf2021survey} S. Maruf, F. Saleh, and G. Haffari, ``A survey on document-level neural machine translation: Methods and evaluation,'' \emph{ACM Comput. Surv.}, vol. 54, no. 2, pp. 1--36, 2021.
-\bibitem{wang2023docllm} L. Wang \emph{et al.}, ``Document-level machine translation with large language models,'' in \emph{Proc. Conf. Empirical Methods Natural Lang. Process. (EMNLP)}, 2023, pp. 16646--16661.
-\bibitem{singh2025indictrans2} Singh, Meetei, and Surajkanta, ``Adapting IndicTrans2 for legal domain MT via QLoRA fine-tuning at JUST-NLP 2025,'' in \emph{Proc. JUST-NLP Workshop}, 2025, pp. 142--147. % CHECK: author initials
-\bibitem{lorini2026eu} Lorini \emph{et al.}, ``One size does not fit all: Why EU legislative translation demands domain-specific fine-tuning of LLMs,'' in \emph{Proc. Annu. Conf. Eur. Assoc. Mach. Transl. (EAMT)}, 2026, pp. 304--320. % CHECK: author initials
-\bibitem{holtzman2020degeneration} A. Holtzman, J. Buys, L. Du, M. Forbes, and Y. Choi, ``The curious case of neural text degeneration,'' in \emph{Proc. Int. Conf. Learn. Representations (ICLR)}, 2020.
-\bibitem{keskar2019ctrl} N. S. Keskar, B. McCann, L. R. Varshney, C. Xiong, and R. Socher, ``CTRL: A conditional transformer language model for controllable generation,'' arXiv:1909.05858, 2019.
-\bibitem{feng2022labse} F. Feng, Y. Yang, D. Cer, N. Arivazhagan, and W. Wang, ``Language-agnostic BERT sentence embedding,'' in \emph{Proc. Annu. Meeting Assoc. Comput. Linguistics (ACL)}, 2022, pp. 878--891.
-\bibitem{indexteam} IndexTeam, ``Index-Translate-2B,'' Hugging Face model, \texttt{IndexTeam/Index-Translate-2B}. % CHECK: official citation
-\bibitem{post2018sacrebleu} M. Post, ``A call for clarity in reporting BLEU scores,'' in \emph{Proc. Third Conf. Mach. Transl. (WMT)}, 2018, pp. 186--191.
-\bibitem{popovic2015chrf} M. Popovi\'{c}, ``chrF: character n-gram F-score for automatic MT evaluation,'' in \emph{Proc. Tenth Workshop Stat. Mach. Transl. (WMT)}, 2015, pp. 392--395.
-\bibitem{papineni2002bleu} K. Papineni, S. Roukos, T. Ward, and W.-J. Zhu, ``BLEU: a method for automatic evaluation of machine translation,'' in \emph{Proc. Annu. Meeting Assoc. Comput. Linguistics (ACL)}, 2002, pp. 311--318.
-\bibitem{koehn2004significance} P. Koehn, ``Statistical significance tests for machine translation evaluation,'' in \emph{Proc. Conf. Empirical Methods Natural Lang. Process. (EMNLP)}, 2004, pp. 388--395.
-\end{thebibliography}
+
 
 \end{document}

@@ -5,6 +5,9 @@ hy-mt2-1.8b-trained/
 *.gguf
 *.work/
 delivery/
+# generated translations, local runs, and cleanup archives
+/out/
+/work/
 # python / tooling
 __pycache__/
 *.pyc
