@@ -20,14 +20,14 @@ Use the venue's call for papers to determine the required mode and page limit.
 
 Formatting rechecked on 2026-10-27 against the official ACL template and
 [ACLPUB guidelines](https://acl-org.github.io/ACLPUB/formatting.html): both style
-files match upstream byte for byte; seven A4 pages; default ACL geometry,
+files match upstream byte for byte; eight A4 pages; default ACL geometry,
 two-column layout, caption and bibliography styles; all PDF fonts embedded;
 no unresolved citations/references or overfull boxes. The appendix uses the
 default ACL page alignment. Both vector diagrams use the full text width for
-legibility. All seven rendered pages were visually checked. The file remains in
+legibility. The file remains in
 `final` mode, with authors visible and no page or review line numbers.
 
-The revised paper has seven pages including references and appendices, with all
+The revised paper has eight pages including references and appendices, with all
 major sections retained. The reported score/cost tables and the two figure PDFs
 are preserved. Prose was condensed and implementation descriptions and formulas
 were checked against the local training and inference code.
