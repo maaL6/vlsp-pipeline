@@ -36,6 +36,3 @@ The 20 retained references were checked against primary records. The origin of
 the internal validation partition still needs clarification. The main-table
 baseline/Index scores are retained from the original paper by author decision;
 their run provenance remains incomplete.
-
-Reproduction scripts are documented in [verification/README.md](verification/README.md).
-Generated JSON reports and local editorial/search notes are ignored by Git.

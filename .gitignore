@@ -36,11 +36,6 @@ paper/**/*.vrb
 paper/**/*.xdv
 paper/**/*.run.xml
 paper/**/*.bcf
-# Local editorial audits and generated verification reports; keep reproduction scripts
-/paper/acl/VERIFICATION.md
-/paper/acl/verification/CLAIM_AUDIT.md
-/paper/acl/verification/DOCUMENTS_SEARCH.md
-/paper/acl/verification/*.json
 # Editor temporary files
 *.swp
 *.swo
