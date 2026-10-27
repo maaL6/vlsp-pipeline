@@ -61,7 +61,7 @@ The system combines legal-data preparation, LoRA fine-tuning and structured infe
 \caption{Preparation of the supervised fine-tuning corpus.}
 \label{fig:data}
 \end{figure*}
-Parallel Markdown documents are sliced at preamble, article, clause, adjacent-article and whole-document boundaries. A row pairs a slice with its translation. Processing (Fig.~\ref{fig:data}) expands the initial 54,134 rows from 575 training documents to 82,203 rows from 612 documents; the latter comprise 571 retained training documents and all 41 development documents, with four initial training documents absent after filtering. The final composition is given in Table~\ref{tab:composition}. All training data come from organiser-provided data or are written by the authors; we use no external parallel or monolingual corpora.
+Parallel Markdown documents are sliced at preamble, article, clause, adjacent-article and whole-document boundaries. A row pairs a slice with its translation. Processing (Fig.~\ref{fig:data}) expands the initial 54,134 rows from 575 training documents to 82,203 rows from 612 documents; the latter comprise 571 retained training documents and all 41 development documents, with four initial training documents absent after filtering. The final composition is given in Table~\ref{tab:composition}. Training data come from organiser-provided data or are written by the authors, and we use no external parallel or monolingual corpora; 72 of the added terminology rows are taken from the public-test references (see Section~\ref{sec:limitations}).
 
 \textbf{Alignment review.} We flag 237 slices with inconsistent document codes or large numbers, exclude 158 after manual review, and propagate removals to slices containing the same erroneous segment. Flags require review because numbers may be written differently across languages.
 
@@ -81,7 +81,8 @@ Component & Rows \\
 Original rows after cleaning & 50,129 \\
 Paragraph-level rows & 30,658 \\
 Hand-written formula rows & 654 \\
-Terminology rows & 762 \\
+Terminology rows (training data) & 690 \\
+Terminology rows (public-test refs.) & 72 \\
 \midrule
 \textbf{Total} & \textbf{82,203} \\
 \bottomrule
@@ -115,7 +116,7 @@ Figure~\ref{fig:pipeline} outlines parsing, grouping, batched generation, valida
 
 \textbf{Validation.} Hard failures include empty/unmappable outputs, missing EOS, lost protected headings/labels, multiline table-cell outputs and severe repetition. Number mismatches, suspicious length ratios, possible untranslated text and modal/negation discrepancies are warnings, not proofs of semantic errors. Multi-node newline units require one non-empty output line per node; coalesced prose blocks permit internal reflow and retain protected member labels. These checks detect structural failures but cannot guarantee semantic completeness.
 
-\textbf{Recovery and selection.} One recovery round splits failed units into smaller sentence-preserving pieces, targeting 256 source tokens. Failed multi-node newline units are retried independently. Recovery can increase the directional output allowance and applies a 1.15 repetition penalty after loops. Selection favours fewer hard failures, retaining the first pass on ties; complete alternative node outputs can fill gaps. Remaining partial outputs are flagged, and empty translations fall back to source text with a warning.
+\textbf{Recovery and selection.} One recovery round splits failed units into smaller sentence-preserving pieces, targeting 256 source tokens. Failed multi-node newline units are retried independently. When a protected label is lost, the retry prepends an instruction to preserve the listed source labels. Recovery can increase the directional output allowance and applies a 1.15 repetition penalty after loops. Selection favours fewer hard failures, retaining the first pass on ties; complete alternative node outputs can fill gaps. Remaining partial outputs are flagged, and empty translations fall back to source text with a warning.
 
 \textbf{Illustrative example.} An article heading and its clauses ``1.'' and ``2.'' can share a prose block. If the translation drops the protected label ``2.'', validation triggers recovery on smaller, sentence-preserving pieces. Changed line breaks alone do not fail a coalesced prose block, since the check targets structure rather than meaning.
 
@@ -228,7 +229,7 @@ System & \envi{} & \vien{} & \envi{} & \vien{} \\
 \subsection{Results}
 Table~\ref{tab:main} compares (1) paragraph-wise base-model translation, (2) the base model with the pipeline and (3) the fine-tuned model with the pipeline. For Hy-MT2, (1) uses sampling and (2)--(3) use greedy decoding, so (1)--(2) changes both decoding and pipeline. The (2)--(3) comparison measures fine-tuning with the pipeline fixed, without separating the effects of cleaning and augmentation.
 
-\textbf{Pipeline and fine-tuning.} For Index, where decoding is fixed, the pipeline adds 1.53/1.16 BLEU; for Hy-MT2 the gain also reflects the change from sampling to greedy decoding. Fine-tuning yields the largest observed gain: Hy-MT2 improves from 39.96 to 70.87 BLEU for \envi{} and from 30.27 to 47.44 for \vien{}. Index shows the same trend. The final-system BLEU intervals are [65.68, 74.24] for \envi{} and [42.30, 50.99] for \vien{}. Scores in opposite directions are not directly comparable, so we report them separately.
+\textbf{Pipeline and fine-tuning.} For Index, where decoding is fixed, the pipeline adds 1.53/1.16 BLEU; for Hy-MT2 the gain also reflects the change from sampling to greedy decoding. For Hy-MT2, the 95\% paired bootstrap interval of the BLEU difference between (1) and (2) excludes 0 in both directions, though it covers the combined effect of decoding and pipeline. Fine-tuning yields the largest observed gain: Hy-MT2 improves from 39.96 to 70.87 BLEU for \envi{} and from 30.27 to 47.44 for \vien{}, and the interval of this difference also excludes 0. Index shows the same trend, so the conclusion does not rest on one model. The final-system BLEU intervals are [65.68, 74.24] for \envi{} and [42.30, 50.99] for \vien{}. \vien{} scores lower in BLEU than \envi{} for every system; we believe the gap is partly due to non-equivalent score scales, since the chrF difference between the directions is only about 5 points for the final system. Scores in opposite directions are not directly comparable, so we report them separately.
 
 \textbf{Model choice.} Index has higher base scores, including row (2), where both models use greedy decoding with the pipeline. After fine-tuning, however, Hy-MT2 scores higher in both directions and is selected for submission. The remaining analyses use Hy-MT2.
 
@@ -237,12 +238,14 @@ Table~\ref{tab:main} compares (1) paragraph-wise base-model translation, (2) the
 \subsection{Cost}
 Table~\ref{tab:cost} reports full-public-set inference cost. The fine-tuned pipeline takes 7,229~s (2.0~h) for \envi{} and 4,871~s (1.4~h) for \vien{}, with 4.96/5.25~GB peak allocated GPU memory (decimal GB), measured by PyTorch; this excludes the CUDA context and allocator cache, so process-level usage is higher. Timing excludes model loading and calibration. Recovery re-translates 138 of 2,899 \envi{} units (4.76\%) and 326 of 3,086 \vien{} units (10.56\%), splitting them into 836 and 1,443 smaller requests. Earlier grouping runs took 4.6/2.9~h; their different checkpoint and pipeline preclude isolating one optimisation.
 
+Fine-tuning adds no cost: system (3) is faster than system (2) in both directions. Against (2), for \envi{} it needs fewer recovery requests (836 vs.\ 962) and leaves fewer unresolved units (26 vs.\ 110). For \vien{} it needs more recovery requests (1,443 vs.\ 1,147) but still leaves fewer unresolved units (208 vs.\ 241). System (1) is fast because it makes one call per paragraph and neither validates nor re-translates its output.
+
 Unresolved units total 26/2,899 (0.90\%) across 11 documents for \envi{}: 25 have protected-label failures and one a protected-heading failure. For \vien{}, 208/3,086 (6.74\%) across 29 documents include 198 with protected-block-label failures, 11 with line-count mismatches, three with inline-label failures and one with a heading failure; categories overlap. Final diagnostics record no unresolved empty nodes, source fallbacks, missing-EOS or repetition hard failures in either direction. Thus these rates measure remaining structural-check failures, not measured omission rates; partial content and semantic omissions still require direct translation review.
 
 \section{Limitations and Discussion}\label{sec:limitations}
-Systems are selected on the public set following the task guidance, so the reported scores describe development performance rather than an independent evaluation. Validation-loss monitoring uses the internal held-out split. We report no official private-test rankings, no legal-accuracy or terminology scores and no neural or LLM-based metrics, although the official evaluation includes them.
+Systems are selected on the public set following the task guidance, so the reported scores describe development performance rather than an independent evaluation. In addition, 72 training rows are terminology pairs taken from the public-test references, so the reported scores may be somewhat optimistic for unseen documents. Some misaligned pairs probably remain undetected in the training data. Validation-loss monitoring uses the internal held-out split. We report no official private-test rankings, no legal-accuracy or terminology scores and no neural or LLM-based metrics, although the official evaluation includes them.
 
-Structural validation cannot establish semantic fidelity or document-wide terminology consistency, and unresolved blocks can retain partial or untranslated text. Further evaluation should examine omissions, obligations, negation and terminology with domain experts. Additional ablations could separate cleaning/augmentation, decoding, grouping and recovery; inference-time glossary hints remain untested systematically. Tone-mark normalisation follows the older placement used in most training text; public-test references using the newer placement are not normalised, which can lower \envi{} scores on those documents.
+Structural validation cannot establish semantic fidelity or document-wide terminology consistency, and unresolved blocks can retain partial or untranslated text. The \vien{} direction remains clearly below \envi{} in BLEU for every system in Table~\ref{tab:main}. Further evaluation should examine omissions, obligations, negation and terminology with domain experts. Additional ablations could separate cleaning/augmentation, decoding, grouping and recovery; inference-time glossary hints remain untested systematically. Tone-mark normalisation follows the older placement used in most training text; public-test references using the newer placement are not normalised, which can lower \envi{} scores on those documents.
 
 \begin{samepage}
 \section{Conclusion}
@@ -264,7 +267,6 @@ Here \texttt{tgt} is English or Vietnamese. Terminology training prompts prepend
 
 \section{Hyperparameters}\label{app:hyper}
 Table~\ref{tab:hyper} records the Hy-MT2 training and submitted inference configuration. Hy-MT2 trains first on approximately 53.5k rows and then on 82,203 rows. Base revisions are \texttt{9a341cd1b679} (Hy-MT2) and \texttt{a516854233b1} (Index); the final Hy-MT2 adapter SHA-256 starts with \texttt{30b5fc68a31c}.
-
 \noindent\begin{minipage}{\columnwidth}
 \centering\small
 \begin{tabularx}{\columnwidth}{@{}lX@{}}
