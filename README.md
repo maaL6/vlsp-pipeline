@@ -92,6 +92,26 @@ Other ways to run the image (without HTTP, over a directory of `.md` files, or w
 - Token repetition is detected on the GPU (`degeneration_*`), and a degenerate unit is retranslated with `repetition_penalty` 1.15.
 - One recovery pass for failed units. No source context, glossary or translation history is used.
 
+## Speed and memory
+
+Default settings (`batch_size` 8, `batch_token_cap` 32768, fp16 greedy), measured on the private test (50 documents per direction) on a Tesla T4:
+
+| Direction | Input words | Time | Words/s | Tokens/s | Peak GPU memory |
+|---|---|---|---|---|---|
+| EN→VI | 333,455 | 6,006 s | ~56 | ~118 | 4.97 GB |
+| VI→EN | 545,274 | 5,827 s | ~94 | ~109 | 5.27 GB |
+
+Larger batches are estimated, not measured on the full test:
+
+| `batch_size` | `batch_token_cap` | Peak GPU memory | Speed vs batch 8 | Private test, both directions, one GPU | Minimum GPU |
+|---|---|---|---|---|---|
+| 8 (default) | 32768 | ~5.3 GB | 1× | ≥ 3.3 h | 8 GB |
+| 16 | 65536 | ~7–8 GB | ~1.3–1.5× | ~2.2–2.5 h | 12 GB |
+| 32 | 131072 | ~12–13 GB | ~1.6–2× | ~1.7–2.1 h | 16 GB (tight) |
+| 64 | 262144 | ~20–22 GB | ~1.6–2× | ~1.7–2.1 h | 24 GB |
+
+Set `batch_size`, and in `extra` both `batch_token_cap` and `batch_maximum` (same value as `batch_size`) in a copy of the config; [USAGE.md](USAGE.md) shows how to pass it to the Docker image. On a CUDA out-of-memory error the batch is halved automatically.
+
 ## Pipeline steps
 
 The pipeline reads only the source side and never the reference:
