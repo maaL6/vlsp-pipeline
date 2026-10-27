@@ -2,7 +2,7 @@
 
 Title: **Rainbow Cookie at VLSP 2026: Small Models, Long Laws**.
 
-Source: `paper_en.tex`; compiled paper: `paper_en.pdf`.
+Source: `paper.tex`; compiled paper: `paper.pdf`.
 
 The unmodified `acl.sty` and `acl_natbib.bst` come from the official
 [ACL style repository](https://github.com/acl-org/acl-style-files), retrieved on
@@ -11,7 +11,7 @@ The unmodified `acl.sty` and `acl_natbib.bst` come from the official
 Build from this directory with pdfLaTeX and BibTeX:
 
 ```sh
-latexmk -pdf -interaction=nonstopmode -halt-on-error paper_en.tex
+latexmk -pdf -interaction=nonstopmode -halt-on-error paper.tex
 ```
 
 The source uses `\usepackage[final]{acl}` to retain the existing author names.
