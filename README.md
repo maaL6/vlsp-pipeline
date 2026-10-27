@@ -1,38 +1,45 @@
-# vlsp-pipeline — dịch tài liệu Markdown EN↔VI (VLSP 2026)
+# VLSP 26 - Document-Level Legal Machine Translation with Limited-Parameter Models
 
-Hướng dẫn build/chạy/nộp Docker image: [GUIDE.md](GUIDE.md).
+Our submission to the VLSP 2026 machine translation task translates legal Markdown documents in both directions, EN→VI and VI→EN. It uses Hy-MT2-1.8B with a merged LoRA adapter. Each processing step lives in its own file (`docmt/steps/`). For building, running and submitting the Docker image, see [GUIDE.md](GUIDE.md).
 
-Pipeline dịch tài liệu pháp lý Markdown EN→VI và VI→EN bằng Hy-MT2-1.8B + LoRA adapter (đã merge).
-Mỗi bước xử lý nằm trong một file riêng (`docmt/steps/`).
+Public test results (100 documents, raw scoring with `tools/score_public.py`):
 
-Điểm public test (100 tài liệu, chấm raw bằng `tools/score_public.py`):
-
-| Chiều | BLEU | chrF |
+| Direction | BLEU | chrF |
 |---|---|---|
 | EN→VI | 70.87 | 84.48 |
 | VI→EN | 47.44 | 79.50 |
 
-## Cài đặt
+Private test leaderboard (our team, wann, ranks 3rd on both metrics):
 
-Repo **không chứa model**. Cần:
+| # | User | Entries | Date of last entry | SacreBLEU | chrF |
+|---|---|---|---|---|---|
+| 1 | NgJaBach | 5 | 10/11/26 | 63.5312 | 84.1597 |
+| 2 | rudeus | 5 | 10/14/26 | 62.1307 | 83.2732 |
+| 3 | **wann** | 2 | 10/14/26 | 60.4346 | 82.1852 |
+| 4 | An0949033378 | 6 | 10/14/26 | 59.7272 | 81.9513 |
+| 5 | hiimhoanglam | 2 | 10/11/26 | 57.6959 | 80.5156 |
+| 6 | phthuan05 | 1 | 10/11/26 | 55.7442 | 80.4560 |
+| 7 | bao135 | 6 | 10/13/26 | 52.9761 | 77.5254 |
 
-1. **GPU NVIDIA** (~5 GB VRAM, fp16, đã chạy trên T4). Backend `hf` gọi `.to("cuda")`, không chạy CPU.
-2. **Python ≥ 3.10**, torch bản CUDA, rồi `pip install -r requirements.txt`.
-   Cần `tokenizers ≥ 0.21` và `transformers ≥ 5.6`; bản cũ hơn không đọc được `tokenizer.json`.
-3. **Model đã merge** (Hy-MT2-1.8B + adapter, `model.safetensors` sha256 `5dc305ae…`, kèm `tokenizer.json`).
-   Tạo từ adapter (sha256 `30b5fc68…`):
+## Setup
+
+The repository does not contain the model. The `.safetensors` files are available in the Releases section of this repository. You need:
+
+1. An NVIDIA GPU (~5 GB VRAM, fp16; tested on a T4). The `hf` backend calls `.to("cuda")` and does not run on CPU.
+2. Python ≥ 3.10 and a CUDA build of torch, then `pip install -r requirements.txt`. `tokenizers ≥ 0.21` and `transformers ≥ 5.6` are required; older versions cannot read `tokenizer.json`.
+3. The merged model (Hy-MT2-1.8B + adapter, `model.safetensors` sha256 `5dc305ae…`, with `tokenizer.json`). Build it from the adapter (sha256 `30b5fc68…`):
 
 ```bash
 python tools/merge_adapter.py --adapter ADAPTER_DIR --out models/hy_mt_merged
 ```
 
-## Chạy
+## Running
 
 ```bash
-MODEL=models/hy_mt_merged ./run.sh INPUT_DIR OUTPUT_DIR en-vi      # hoặc vi-en
+MODEL=models/hy_mt_merged ./run.sh INPUT_DIR OUTPUT_DIR en-vi      # or vi-en
 ```
 
-Không có bash (Windows):
+Without bash (Windows):
 
 ```bash
 python -m docmt run-dir --input-dir IN --output-dir OUT --direction en-vi ^
@@ -40,12 +47,9 @@ python -m docmt run-dir --input-dir IN --output-dir OUT --direction en-vi ^
     --model C:\path\hy_mt_merged --tokenizer C:\path\hy_mt_merged\tokenizer.json
 ```
 
-`INPUT_DIR` chứa các file `.md`; `OUTPUT_DIR` có cùng cây thư mục và chỉ chứa bản dịch. Log và trace nằm ở
-`OUTPUT_DIR.work/` (`logs/document_status.jsonl` là trạng thái từng tài liệu). Exit code ≠ 0 khi có tài liệu
-`failed` hoặc thiếu output. Biến môi trường của `run.sh`: `MODEL`, `TOKENIZER`, `CONFIG`, `RUN_ID`, `WORK_DIR`,
-`PYTHON`, `BACKEND`. `--set key=value` ghi đè một trường của config.
+`INPUT_DIR` holds the `.md` files. `OUTPUT_DIR` mirrors its directory tree and contains only translations. Logs and traces go to `OUTPUT_DIR.work/`, where `logs/document_status.jsonl` records the status of each document. The exit code is non-zero if any document is `failed` or an output is missing. `run.sh` reads these environment variables: `MODEL`, `TOKENIZER`, `CONFIG`, `RUN_ID`, `WORK_DIR`, `PYTHON`, `BACKEND`. `--set key=value` overrides a single config field.
 
-## Chạy private test trên máy local (cần GPU)
+## Private test and submission
 
 ```bash
 python tools/export_sources.py --out work/sources          # dataset/private_test -> work/sources/{en,vi}/*.md
@@ -54,116 +58,86 @@ MODEL=models/hy_mt_merged ./run.sh work/sources/vi work/out/en vi-en
 python tools/build_submission.py --en-vi work/out/vi --vi-en work/out/en --out submission.zip
 ```
 
-## Docker (dịch vụ HTTP theo yêu cầu cuộc thi)
+The default template is `dataset/private_test/private_test_input.csv`, where each ID has one direction (`en` source → `en-vi`, `vi` source → `vi-en`). A template with the columns `sample_id,direction,translation` also works. The `--en-vi` and `--vi-en` directories each keep the `category/id.md` tree. The script reports an error and writes no ZIP if a file is missing, a translation is empty, a key is duplicated or a direction is wrong.
 
-Image chạy một dịch vụ HTTP: `POST /translate` nhận một tài liệu Markdown UTF-8 và trả bản dịch, tự nhận chiều
-dịch từ văn bản (nguồn tiếng Việt → `vi-en`, ngược lại `en-vi`). `GET /health` trả 200 khi model đã nạp.
-Model nằm trong image, chạy offline, không gọi API ngoài.
+## Docker
 
-Build từ đúng thư mục repo này (chỉ cần Docker, NVIDIA Container Toolkit và internet; không cần cài Python/torch ngoài máy):
+The image runs an HTTP service as the task requires. `POST /translate` takes one UTF-8 Markdown document and returns its translation, detecting the direction from the text (Vietnamese source → `vi-en`, otherwise `en-vi`). `GET /health` returns 200 once the model is loaded. The model is inside the image and runs offline.
 
 ```bash
-mkdir adapter && cp /đường/dẫn/adapter_model.safetensors /đường/dẫn/adapter_config.json adapter/   # adapter không nằm trong git
-tools/build_image.sh                                 # build runtime -> merge adapter + Hy-MT2-1.8B trên GPU -> build image đầy đủ
+mkdir adapter && cp /path/to/adapter_model.safetensors /path/to/adapter_config.json adapter/   # the adapter is not in git
+tools/build_image.sh
 docker run --rm --gpus all -p 8000:8000 hy-mt-vlsp26
-./translate.sh localhost:8000 input.md output.md     # HOST:PORT, file vào, file ra; in thống kê (giây, từ/giây, GPU)
-./translate.sh localhost:8000 dataset/private_test/private_test_input.csv results.csv   # private test CSV -> CSV nộp
-# hoặc không cần HTTP: docker run --rm --gpus all -v $PWD/dataset/private_test:/in:ro -v $PWD/out:/out hy-mt-vlsp26 --csv /in/private_test_input.csv --out /out/results.csv
+./translate.sh localhost:8000 input.md output.md
+./translate.sh localhost:8000 dataset/private_test/private_test_input.csv results.csv
 ```
 
-`translate.sh` đợi dịch vụ sẵn sàng (tối đa `WAIT_SECONDS`, mặc định 1800 giây). `docker build --target runtime`
-tạo image không có weights (mount model vào `/models/hy_mt_merged`). Chạy theo thư mục `.md` thay vì dịch vụ:
-`docker run --rm --gpus all --entrypoint /app/run.sh -v IN:/input:ro -v OUT:/output hy-mt-vlsp26 /input /output en-vi`.
-Cần NVIDIA Container Toolkit (`--gpus all`).
-
-## Nộp bài (VLSP 2026 MT)
-
-Theo trang cuộc thi, bài nộp là image Docker tự chứa chạy offline cùng script bash
-`translate.sh HOST:PORT INPUT OUTPUT`; đóng gói thành một file nén, kèm MD5, đặt trên Google Drive/OneDrive
-(bật quyền tải). Chỉ bản nộp cuối được chấm.
+Docker and the NVIDIA Container Toolkit are required. `translate.sh` waits for the service for up to `WAIT_SECONDS` (default 1800). To package the image for submission (archive + MD5):
 
 ```bash
-tools/package_docker.sh hy-mt-vlsp26 dist      # dist/hy-mt-vlsp26.tar.gz (image.tar + translate.sh + README.md) và file .md5
+tools/package_docker.sh hy-mt-vlsp26 dist
 ```
 
-Điền form nộp: Team name, Method name, Method description, Project URL (link tải archive trên), Publication URL
-(link bài báo). Model 1,8B tham số (dưới giới hạn 3B). Kết quả tự động trên private test còn có thể nộp
-lên AIHub dưới dạng `results.csv` (xem *Tạo submission*).
+Other ways to run the image (without HTTP, over a directory of `.md` files, or without weights) and the submission form fields are in [GUIDE.md](GUIDE.md).
 
-## Cấu hình
+## Configuration
 
-`configs/hy_mt_vlsp26.json` là config mặc định của `run.sh`:
+`configs/hy_mt_vlsp26.json` is the default config for `run.sh`:
 
-- HF transformers, fp16, greedy, `repetition_penalty` 1.0, `batch_size` 8.
-- Prompt dài tối đa 8192 token (`max_sequence`); đoạn nguồn tối đa 768 token (`source_cap`).
-- Các node của một unit nối bằng xuống dòng (`extra.payload_delimiter = "newline"`), không chèn marker.
-- `extra.legal_prose_blocks`: gom các đoạn văn pháp lý liền nhau thành một khối trước khi chia unit.
-- Ngân sách output theo chiều: EN→VI `max(256, ⌈2.5·src⌉+128)`, VI→EN `max(256, ⌈1.25·src⌉+128)`.
-- Phát hiện lặp token trên GPU (`degeneration_*`); unit bị lặp được dịch lại với `repetition_penalty` 1.15.
-- Một vòng recovery cho unit lỗi; không dùng source context, glossary hay lịch sử bản dịch.
+- HF transformers, fp16, greedy decoding, `repetition_penalty` 1.0, `batch_size` 8.
+- Prompts are capped at 8192 tokens (`max_sequence`) and source segments at 768 tokens (`source_cap`).
+- The nodes of a unit are joined by newlines (`extra.payload_delimiter = "newline"`), with no markers inserted.
+- `extra.legal_prose_blocks` merges adjacent legal prose paragraphs into one block before units are split.
+- Output budget: EN→VI `max(256, ⌈2.5·src⌉+128)`, VI→EN `max(256, ⌈1.25·src⌉+128)`.
+- Token repetition is detected on the GPU (`degeneration_*`), and a degenerate unit is retranslated with `repetition_penalty` 1.15.
+- One recovery pass for failed units. No source context, glossary or translation history is used.
 
-## Các bước
+## Pipeline steps
 
-Luồng một tài liệu (chỉ đọc phía nguồn, không bao giờ đọc reference):
+The pipeline reads only the source side and never the reference:
 
-| Bước | File | Việc làm |
+| Step | File | Role |
 |---|---|---|
-| s01 parse | `steps/s01_parse.py`, `s01_parse_lines.py` | raw text → `Node[]` (header, bảng, chữ ký, scope); `"".join(n.raw) == src` |
-| s02 payload | `steps/s02_payload.py`, `s02_blocks.py` | chuẩn hoá payload của node; gom đoạn văn pháp lý |
-| s03 split / pack | `steps/s03_split.py`, `s03_pack.py` | cắt node dài; gom node thành `Unit[]` |
+| s01 parse | `steps/s01_parse.py`, `s01_parse_lines.py` | raw text → `Node[]` (header, table, signature, scope); `"".join(n.raw) == src` |
+| s02 payload | `steps/s02_payload.py`, `s02_blocks.py` | normalize node payloads; merge legal prose paragraphs |
+| s03 split / pack | `steps/s03_split.py`, `s03_pack.py` | split long nodes; pack nodes into `Unit[]` |
 | s04 prompt | `steps/s04_prompt.py` | unit → prompt |
 | s05 budget | `steps/s05_budget.py` | prompt → `max_new_tokens` |
-| generate | `backends/hf.py` (+ `batch_policy.py`, `degeneration.py`) | sinh theo batch trên GPU, phát hiện lặp |
-| s06 parse output | `steps/s06_parse_output.py` | output → bản dịch từng node (dòng i → node i) |
-| s07 validate | `steps/s07_validate_unit.py`, `checks/{numbers,headings,loops,lexical}.py` | lỗi **hard** kích hoạt recovery; warning chỉ ghi |
-| s08 recovery | `steps/s08_recovery.py` | unit lỗi → dịch lại từng node |
-| s09 select | `steps/s09_select.py` | chọn giữa lượt đầu và recovery |
-| s10 assemble / check | `steps/s10_assemble.py`, `s10_doc_check.py` | ghép Markdown theo layout nguồn; kiểm tài liệu |
+| generate | `backends/hf.py` (+ `batch_policy.py`, `degeneration.py`) | batched GPU generation, repetition detection |
+| s06 parse output | `steps/s06_parse_output.py` | output → per-node translations (line i → node i) |
+| s07 validate | `steps/s07_validate_unit.py`, `checks/{numbers,headings,loops,lexical}.py` | hard errors trigger recovery; warnings are only logged |
+| s08 recovery | `steps/s08_recovery.py` | failed unit → retranslate node by node |
+| s09 select | `steps/s09_select.py` | choose between the first pass and recovery |
+| s10 assemble / check | `steps/s10_assemble.py`, `s10_doc_check.py` | rebuild Markdown in the source layout; check the document |
 
-Hạ tầng: `engine/` (`doc_job.py` điều phối một tài liệu, `run.py`, `scheduler.py`, `api.py`), `core/`
-(kiểu dữ liệu, config, tokenizer, normalize, hashing), `inputs/sources.py`, `tracing/` (trace, status, cache),
-`cli.py` (lệnh `run-dir`), `server.py` (dịch vụ HTTP của image Docker).
+Infrastructure: `engine/` (`doc_job.py`, `run.py`, `scheduler.py`, `api.py`), `core/` (data types, config, tokenizer, normalize, hashing), `inputs/sources.py`, `tracing/` (trace, status, cache), `cli.py` (the `run-dir` command), `server.py` (the Docker image's HTTP service).
 
-## Chạy trên Kaggle (private test, T4 x2)
+## Kaggle (private test, 2x T4)
 
-Thư mục `kaggle/`:
+The `kaggle/` directory contains:
 
-| File | Tác dụng |
+| File | Role |
 |---|---|
-| `kernel_private.py` | Kernel Kaggle: merge adapter vào Hy-MT2-1.8B, chạy `run-dir` song song hai chiều (mỗi chiều một GPU), ghi `predictions_private/{en,vi}/`, `submission.zip` và `results.zip` |
-| `build_bundle.py` | Đóng gói code, `calibration/`, CSV private và `run_spec.json` thành dataset runtime kèm manifest sha256 mà kernel kiểm tra |
-| `push.sh` | Dựng bundle, upload dataset runtime + adapter, push kernel |
-| `calibration/{en-vi,vi-en}/config.json` | Config từng chiều (batch 8) mà kernel truyền cho `run-dir` |
-| `run_spec.json` | Thông số run; `git_head` và `csv_md5` được điền khi build |
+| `kernel_private.py` | Merges the adapter into Hy-MT2-1.8B, runs `run-dir` on both directions in parallel (one GPU each), and writes `predictions_private/{en,vi}/`, `submission.zip` and `results.zip` |
+| `build_bundle.py` | Packs the code, `calibration/`, the private CSV and `run_spec.json` into a runtime dataset with a sha256 manifest |
+| `push.sh` | Builds the bundle, uploads the runtime dataset and the adapter, and pushes the kernel |
+| `calibration/{en-vi,vi-en}/config.json` | Per-direction config (batch 8) |
+| `run_spec.json` | Run parameters; `git_head` and `csv_md5` are filled in at build time |
 
 ```bash
-KAGGLE_API_TOKEN=... OWNER=<user kaggle> ADAPTER_DIR=<thư mục adapter> kaggle/push.sh
+KAGGLE_API_TOKEN=... OWNER=<kaggle user> ADAPTER_DIR=<adapter directory> kaggle/push.sh
 ```
 
-Adapter cần có sha256 `30b5fc68…`; kernel dừng nếu khác. CSV private mặc định là
-`dataset/private_test/private_test_input.csv` (đổi bằng `PRIVATE_CSV`). Kernel cần 2 GPU T4 và internet
-(tải `tencent/Hy-MT2-1.8B` đúng revision đã ghim). Chạy xong lấy kết quả bằng
-`kaggle kernels output OWNER/KERNEL -p OUT`; `OUT/submission.zip` là file nộp. `kaggle/build/` là thư mục tạm.
+The adapter must have sha256 `30b5fc68…`, otherwise the kernel stops. The private CSV defaults to `dataset/private_test/private_test_input.csv` (override with `PRIVATE_CSV`). The kernel needs 2 T4 GPUs and internet access to download `tencent/Hy-MT2-1.8B` at the pinned revision. Fetch the results with `kaggle kernels output OWNER/KERNEL -p OUT`; `OUT/submission.zip` is the file to submit. `kaggle/build/` is a temporary directory.
 
-## Công cụ (`tools/`)
+## Tools (`tools/`)
 
-| File | Tác dụng |
+| File | Role |
 |---|---|
-| `build_submission.py` | Đóng gói bản dịch thành `results.csv` trong ZIP để nộp |
-| `score_public.py` | Chấm BLEU/chrF trên public test (`dataset/public_test/en-vi-public_test.csv`) |
-| `calibrate_batch.py` | Đo throughput GPU để chọn batch 8 hoặc 16 |
-| `merge_adapter.py` | Merge LoRA adapter vào Hy-MT2-1.8B |
-| `compare_csv.py` | So một CSV kết quả với CSV mong đợi (số dòng trùng, chrF); dùng cho demo trong `examples/` |
-| `package_docker.sh` | Đóng gói image + `translate.sh` thành archive kèm MD5 để nộp |
-| `export_sources.py` | Tách CSV private thành thư mục `.md` làm input cho `run.sh` |
-
-## Tạo submission
-
-```bash
-python tools/build_submission.py --en-vi OUTPUT_EN_VI --vi-en OUTPUT_VI_EN --out submission.zip
-```
-
-Template mặc định là `dataset/private_test/private_test_input.csv`: mỗi ID một chiều (nguồn `en` → `en-vi`,
-nguồn `vi` → `vi-en`). Cũng nhận template có cột `sample_id,direction,translation`. Thư mục `--en-vi`
-chứa bản dịch sang tiếng Việt, `--vi-en` chứa bản dịch sang tiếng Anh, mỗi thư mục giữ cây `category/id.md`.
-Script báo lỗi và không tạo ZIP nếu thiếu file, bản dịch rỗng, key trùng hoặc direction sai.
+| `build_submission.py` | Packs translations into `results.csv` inside a ZIP for submission |
+| `score_public.py` | Scores BLEU/chrF on the public test (`dataset/public_test/en-vi-public_test.csv`) |
+| `calibrate_batch.py` | Measures GPU throughput to choose batch size 8 or 16 |
+| `merge_adapter.py` | Merges the LoRA adapter into Hy-MT2-1.8B |
+| `compare_csv.py` | Compares a result CSV with an expected CSV (matching rows, chrF); used by the demo in `examples/` |
+| `package_docker.sh` | Packs the image and `translate.sh` into an archive with an MD5 |
+| `export_sources.py` | Splits the private CSV into `.md` directories as input for `run.sh` |
