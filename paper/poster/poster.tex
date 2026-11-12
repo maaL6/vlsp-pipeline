@@ -1,0 +1,274 @@
+%----------------------------------------------------------------------------------------
+% VLSP 2026 poster -- built on the a0poster portrait template (conference_poster_6.tex)
+% Content follows the published paper: vlsp-pipeline/paper/acl/paper.pdf
+% Build: pdflatex poster.tex   (run twice so citations resolve)
+%----------------------------------------------------------------------------------------
+\documentclass[a0,portrait]{a0poster}
+
+\usepackage{multicol}
+\columnsep=100pt
+\columnseprule=3pt
+
+\usepackage[svgnames]{xcolor}
+\usepackage[utf8]{inputenc}
+\usepackage[T5]{fontenc}   % Vietnamese letters in author names; text stays English
+\usepackage{times}
+\usepackage{graphicx}
+\graphicspath{{figures/}}
+\usepackage{booktabs}
+\usepackage[font=small,labelfont=bf]{caption}
+\usepackage{amsfonts, amsmath, amsthm, amssymb}
+\usepackage{url}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,calc}
+
+\renewcommand{\refname}{References}
+\newcommand{\envi}{EN$\rightarrow$VI}
+\newcommand{\vien}{VI$\rightarrow$EN}
+
+%--- figure styles (drawn at ~1000pt width, rescaled to the column) -----------------------
+\tikzset{
+  box/.style={draw=NavyBlue, fill=NavyBlue!7, rounded corners=8pt, line width=2.5pt,
+              minimum width=285pt, minimum height=150pt, align=center,
+              font=\fontsize{27}{31}\selectfont, inner sep=6pt},
+  io/.style={box, draw=DarkSlateGray, fill=DarkSlateGray!10},
+  arr/.style={-{Latex[length=16pt,width=14pt]}, line width=3pt, draw=NavyBlue},
+  num/.style={circle, fill=NavyBlue, text=white, font=\fontsize{24}{24}\selectfont\bfseries,
+              minimum size=40pt, inner sep=0pt},
+  sub/.style={font=\fontsize{22}{25}\selectfont, text=DarkSlateGray}
+}
+
+\begin{document}
+\fontsize{28}{34}\selectfont
+
+%----------------------------------------------------------------------------------------
+%	POSTER HEADER
+%----------------------------------------------------------------------------------------
+\begin{minipage}[b]{0.75\linewidth}
+\veryHuge \color{NavyBlue} \textbf{Rainbow Cookie at VLSP 2026:\\[10pt]Small Models, Long Laws} \color{Black}\\[0.4cm]
+\huge\textit{Document-Level English--Vietnamese Legal MT under 3B Parameters}\\[0.9cm]
+\fontsize{47}{57}\selectfont \textbf{Trần Đức Lâm, Lê Vân Anh, Phạm Thị Khánh Linh, Nguyễn Thị Hiền Trang}\\[0.4cm]
+\fontsize{39}{47}\selectfont University of Engineering and Technology, Vietnam National University, Hanoi, Vietnam\\[0.3cm]
+\large \texttt{tranduclam06@gmail.com, vananh9684@gmail.com, 24022385@vnu.edu.vn, 24022470@vnu.edu.vn}\\
+\end{minipage}
+%
+\begin{minipage}[b]{0.25\linewidth}
+\includegraphics[width=12cm]{figures/vlsp-2026-logo.png}\\
+\end{minipage}
+
+\vspace{0.8cm}
+
+\begin{multicols}{2}
+
+%----------------------------------------------------------------------------------------
+%	ABSTRACT
+%----------------------------------------------------------------------------------------
+\color{Navy}
+\begin{abstract}\fontsize{28}{34}\selectfont
+We combine \textbf{LoRA adaptation} of Hy-MT2-1.8B on a processed legal corpus with a \textbf{structure-aware Markdown pipeline}: adjacent prose is translated in blocks, deterministic checks flag structural failures, and one recovery round retries them. On the public test set the submitted system obtains \textbf{70.87 BLEU} (\envi) and \textbf{47.44 BLEU} (\vien), in 2.0 and 1.4 hours with about 5~GB peak allocated GPU memory per direction on a T4.
+\end{abstract}
+
+%----------------------------------------------------------------------------------------
+%	INTRODUCTION
+%----------------------------------------------------------------------------------------
+\color{SaddleBrown}
+\section*{Task and Challenges}
+
+\begin{itemize}
+\item \textbf{Fidelity:} specialised terminology, rights, obligations, conditions and exceptions must survive translation.
+\item \textbf{Structure:} article numbers, nested clauses, tables and signature blocks, in documents longer than a small model's context.
+\item \textbf{Constraints:} models $<$3B parameters, fully local, no external API~\cite{vlsp2026}; scored on quality, terminology, legal accuracy, \textbf{time} and \textbf{memory}.
+\end{itemize}
+
+\color{DarkSlateGray}
+
+%----------------------------------------------------------------------------------------
+%	DATA
+%----------------------------------------------------------------------------------------
+\section*{1. Training Data Processing}
+
+Documents are sliced at preamble, article, clause, adjacent-article and whole-document boundaries; a row pairs a slice with its translation. Processing expands \textbf{54,134 rows (575 documents)} to \textbf{82,203 rows (612 documents)}.
+
+\begin{center}
+\resizebox{\linewidth}{!}{%
+\begin{tikzpicture}[x=1pt,y=1pt]
+\node[io]  (a) at (0,0)      {Parallel legal\\documents (EN, VI)};
+\node[box] (b) at (355,0)    {\textbf{Alignment review}\\[2pt]\small flag \& remove\\[-1pt]\small misaligned slices};
+\node[box] (c) at (710,0)    {\textbf{Text normalisation}\\[2pt]\small Unicode NFC, one\\[-1pt]\small tone-mark convention};
+\node[box] (d) at (0,-250)   {\textbf{Extension}\\[2pt]\small paragraph, formula\\[-1pt]\small and term-level pairs};
+\node[box] (e) at (355,-250) {\textbf{Filtering, prompts}\\[2pt]\small LaBSE~\cite{feng2022labse}, number\\[-1pt]\small and length checks};
+\node[io]  (f) at (710,-250) {\textbf{SFT training set}\\(both directions)};
+\draw[arr] (a) -- (b);
+\draw[arr] (b) -- (c);
+\draw[arr] (c.south) -- ++(0,-50) -| (d.north);
+\draw[arr] (d) -- (e);
+\draw[arr] (e) -- (f);
+\end{tikzpicture}}
+\captionof{figure}{\color{Green} Preparation of the supervised fine-tuning corpus.}
+\end{center}
+
+\begin{itemize}
+\item \textbf{Alignment:} 237 slices flagged, \textbf{158 excluded} after manual review.
+\item \textbf{Normalisation:} NFC, look-alike and legacy characters, tone placement on \emph{oa}, \emph{oe}, \emph{uy}; the same normaliser runs on inference sources.
+\item \textbf{Glossary:} 442 pairs; hints in 19,495 of 82,203 rows (23.7\%). Split \emph{by document}; 23 held-out documents are used only for validation loss.
+\end{itemize}
+
+\begin{center}
+\normalsize
+\begin{tabular}{l r}
+\toprule
+\textbf{Component} & \textbf{Rows} \\
+\midrule
+Original rows after cleaning & 50,129 \\
+Paragraph-level rows & 30,658 \\
+Hand-written formula rows & 654 \\
+Terminology rows (training data) & 690 \\
+Terminology rows (public-test refs.) & 72 \\
+\midrule
+\textbf{Total} & \textbf{82,203} \\
+\bottomrule
+\end{tabular}
+\captionof{table}{\color{Green} Composition of the final training data.}
+\end{center}
+
+%----------------------------------------------------------------------------------------
+%	FINE-TUNING
+%----------------------------------------------------------------------------------------
+\section*{2. Base Models and Fine-Tuning}
+
+Hy-MT2-1.8B~\cite{zheng2026hymt2} (submitted) and Index-Translate-2B~\cite{indexteam} are tuned with LoRA~\cite{hu2022lora}: base weights frozen, low-rank matrices learned in attention and MLP projections; loss on response tokens $\mathcal{I}$ only.
+\begin{equation*}
+W = W_0 + \tfrac{\alpha}{r}\,BA, \qquad
+\mathcal{L} = -\tfrac{1}{|\mathcal{I}|}\textstyle\sum_{t\in\mathcal{I}}\log p_\theta(z_t \mid z_{<t}).
+\end{equation*}
+
+\begin{itemize}
+\item Hy-MT2: $r{=}64$, $\alpha{=}128$ on q, k, v, o, gate, up, down: \textbf{77.6M} trainable parameters.
+\item Two passes ($\sim$53.5k, then 82,203 rows), fp16, 2$\times$T4. Merged for inference: 1.79B parameters.
+\end{itemize}
+
+\color{DarkSlateGray}
+
+\columnbreak
+
+%----------------------------------------------------------------------------------------
+%	PIPELINE
+%----------------------------------------------------------------------------------------
+\section*{3. Document-Level Pipeline}
+
+\begin{center}
+\resizebox{\linewidth}{!}{%
+\begin{tikzpicture}[x=1pt,y=1pt]
+\node[box] (p) at (0,0)    {\textbf{Parse}\\[2pt]\small Markdown to\\[-1pt]\small typed nodes};
+\node[box] (k) at (355,0)  {\textbf{Pack}\\[2pt]\small nodes to blocks,\\[-1pt]\small no markers};
+\node[box] (g) at (710,0)  {\textbf{Generate}\\[2pt]\small batches by length,\\[-1pt]\small greedy, fp16, guard};
+\node[box] (v) at (710,-260) {\textbf{Validate}\\[2pt]\small coverage, labels,\\[-1pt]\small completeness};
+\node[box] (s) at (355,-260) {\textbf{Select \& assemble}\\[2pt]\small best attempt per\\[-1pt]\small block, flag unresolved};
+\node[io]  (o) at (0,-260) {Translated\\document};
+\node[num] at (p.north west) {1};
+\node[num] at (k.north west) {2};
+\node[num] at (g.north west) {3};
+\node[num] at (v.north west) {4};
+\node[num] at (s.north west) {5};
+\draw[arr] (p) -- (k);
+\draw[arr] (k) -- (g);
+\draw[arr] ([xshift=-45pt]g.south) -- ([xshift=-45pt]v.north);
+\draw[arr] ([xshift=45pt]v.north) -- ([xshift=45pt]g.south);
+\node[sub, anchor=west, align=left] at ([xshift=62pt]$(g.south)!0.5!(v.north)$) {fail: retry once};
+\draw[arr] (v) -- (s);
+\draw[arr] (s) -- (o);
+\end{tikzpicture}}
+\captionof{figure}{\color{Green} Structured translation with one selective recovery round.}
+\end{center}
+
+\begin{itemize}
+\item \textbf{Parse and pack:} a rule-based parser keeps a lossless partition of the Markdown. Adjacent prose of one scope is joined by newlines, \emph{no markers}, in blocks of $\sim$768 tokens or 8 nodes.
+\item \textbf{Validate:} hard failures are empty output, missing EOS, lost headings or labels, and severe repetition; number and length mismatches are only warnings.
+\item \textbf{Recover once:} failed units are split into sentence-preserving pieces; a lost label triggers a label-preserving instruction; penalty 1.15 after loops. Empty output falls back to the flagged source text.
+\item \textbf{Decode:} greedy fp16, batch 8 with length buckets; a GPU guard stops repetition loops.
+\end{itemize}
+
+%----------------------------------------------------------------------------------------
+%	RESULTS
+%----------------------------------------------------------------------------------------
+\section*{4. Results (Public Test Set, 50 Documents)}
+
+\begin{center}
+\normalsize
+\begin{tabular}{@{}l l c c c c@{}}
+\toprule
+ & & \multicolumn{2}{c}{\envi} & \multicolumn{2}{c}{\vien} \\
+\cmidrule(lr){3-4}\cmidrule(lr){5-6}
+\textbf{Model} & \textbf{System} & BLEU & chrF & BLEU & chrF \\
+\midrule
+Hy-MT2-1.8B & (1) Base & 36.53 & 64.78 & 28.87 & 68.26 \\
+ & (2) Base + pipeline & 39.96 & 65.43 & 30.27 & 68.89 \\
+ & (3) Fine-tuned + pipeline & \textbf{70.87} & \textbf{84.48} & \textbf{47.44} & \textbf{79.50} \\
+\midrule
+Index-Translate-2B & (1) Base & 43.96 & 68.74 & 31.22 & 70.55 \\
+ & (2) Base + pipeline & 45.49 & 69.26 & 32.38 & 71.15 \\
+ & (3) Fine-tuned + pipeline & 62.59 & 78.89 & 41.76 & 76.48 \\
+\bottomrule
+\end{tabular}
+\captionof{table}{\color{Green} SacreBLEU~\cite{post2018sacrebleu} and chrF. Row (1): Hy-MT2 sampled (3-seed mean), Index greedy, so not directly comparable.}
+\end{center}
+
+\begin{itemize}
+\item \textbf{Fine-tuning gives the largest observed gain:} 39.96 $\to$ 70.87 (\envi) and 30.27 $\to$ 47.44 (\vien); paired 95\% CI excludes 0. Index shows the same trend.
+\item \textbf{Pipeline:} +1.53 / +1.16 BLEU for Index (same greedy decoding). For Hy-MT2, (1)$\to$(2) also changes sampling to greedy.
+\item Final-system BLEU 95\% CI: [65.68, 74.24] (\envi), [42.30, 50.99] (\vien).
+\end{itemize}
+
+\begin{center}
+\normalsize
+\begin{tabular}{@{}l c c c c@{}}
+\toprule
+ & \multicolumn{2}{c}{\envi} & \multicolumn{2}{c}{\vien} \\
+\cmidrule(lr){2-3}\cmidrule(lr){4-5}
+\textbf{Node grouping} & BLEU & chrF & BLEU & chrF \\
+\midrule
+A: markers & 68.70 & 83.24 & 46.37 & 79.01 \\
+B: no markers & \textbf{68.90} & \textbf{83.39} & \textbf{46.62} & \textbf{79.17} \\
+C: separate nodes & 67.69 & 82.64 & 45.23 & 78.23 \\
+\bottomrule
+\end{tabular}
+\captionof{table}{\color{Green} Earlier pipeline version. Grouping beats separate requests (B$-$C CIs exclude 0); the marker-free gain over A is uncertain for \vien.}
+\end{center}
+
+\begin{center}
+\normalsize
+\begin{tabular}{@{}l c c c c@{}}
+\toprule
+ & \multicolumn{2}{c}{Time (s)} & \multicolumn{2}{c}{GPU alloc. (GB)} \\
+\cmidrule(lr){2-3}\cmidrule(lr){4-5}
+\textbf{Hy-MT2-1.8B} & \envi & \vien & \envi & \vien \\
+\midrule
+(1) Base, per seed & $\sim$4.0k & $\sim$4.1k & 5.41 & 4.90 \\
+(2) Base + pipeline & 8,111 & 5,326 & 5.34 & 5.15 \\
+(3) Fine-tuned + pipeline & 7,229 & 4,871 & 4.96 & 5.25 \\
+\bottomrule
+\end{tabular}
+\captionof{table}{\color{Green} One T4 per direction (2.0 h, 1.4 h). Recovery re-translates 4.8\% (\envi) and 10.6\% (\vien) of units; 0.9\% and 6.7\% stay unresolved.}
+\end{center}
+
+%----------------------------------------------------------------------------------------
+%	CONCLUSIONS
+%----------------------------------------------------------------------------------------
+\color{SaddleBrown}
+\section*{Conclusion}
+
+Legal-domain LoRA adaptation of Hy-MT2-1.8B plus structured Markdown translation with selective recovery reaches \textbf{70.87 / 47.44 BLEU} (\envi / \vien) at about 5~GB and 2.0 / 1.4 h per direction on a T4. These are development results; independent legal-accuracy and generalisation evaluation remains necessary.
+
+\color{DarkSlateGray}
+{\footnotesize
+\begin{thebibliography}{9}
+\bibitem{vlsp2026} VLSP 2026 Organizers, ``Document-level legal machine translation with limited-parameter models,'' 2026. \url{https://vlsp.org.vn/vlsp2026/eval/mt_challenge}
+\bibitem{zheng2026hymt2} M. Zheng et al., ``Hy-MT2: A family of fast, efficient and powerful multilingual translation models in the wild,'' arXiv:2605.22064, 2026.
+\bibitem{indexteam} T. Li et al., ``Index-Translate: A multilingual translation model family,'' arXiv:2609.40181, 2026.
+\bibitem{hu2022lora} E. J. Hu et al., ``LoRA: Low-rank adaptation of large language models,'' ICLR 2022.
+\bibitem{feng2022labse} F. Feng et al., ``Language-agnostic BERT sentence embedding,'' ACL 2022.
+\bibitem{post2018sacrebleu} M. Post, ``A call for clarity in reporting BLEU scores,'' WMT 2018.
+\end{thebibliography}}
+
+\end{multicols}
+\end{document}
